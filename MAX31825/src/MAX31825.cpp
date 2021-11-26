@@ -314,7 +314,7 @@ void MAX31825::begin(void)
     }
 }
 
-int MAX31825::set_addressing_mode(max31825_addressing_mode_t addr_mode, byte location/*=0x00*/, byte rom_code[8]/*{0,}*/ )
+int MAX31825::set_addressing_mode(addressing_mode_t addr_mode, byte location/*=0x00*/, byte rom_code[8]/*{0,}*/ )
 {
     int ret = 0;
     
@@ -398,7 +398,7 @@ int MAX31825::start_meas(void)
     return ret;
 }
 
-int MAX31825::get_status(max31825_status_t &stat)
+int MAX31825::get_status(status_t &stat)
 {
     int ret = 0;
     byte byt;
@@ -429,7 +429,7 @@ int MAX31825::get_conf_reg(byte &cfg)
     return ret;
 }
 
-int MAX31825::set_conv_rate(max31825_conv_period_t period)
+int MAX31825::set_conv_rate(conv_period_t period)
 {
     int  ret = 0;
     byte cfg;
@@ -449,7 +449,7 @@ int MAX31825::set_conv_rate(max31825_conv_period_t period)
     return ret;
 }
 
-int MAX31825::set_resolution(max31825_resolution_t resolution)
+int MAX31825::set_resolution(resolution_t resolution)
 {
     int  ret = 0;
     byte cfg;
@@ -472,7 +472,7 @@ int MAX31825::set_resolution(max31825_resolution_t resolution)
     return ret;
 }
 
-int MAX31825::set_cmp_int_mode(max31825_mode_t mode)
+int MAX31825::set_cmp_int_mode(mode_t mode)
 {
     int  ret = 0;
     byte cfg;

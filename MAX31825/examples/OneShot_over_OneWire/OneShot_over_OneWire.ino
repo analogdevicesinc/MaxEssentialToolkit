@@ -37,9 +37,9 @@ void setup()  {
         Serial.println(buf);
     }
 
-    //ret = temp_sensor.set_addressing_mode(ADDRESSING_USE_ADD1_ADD0, MAX31825_ADDR_FOR_56_6_KOHM);
-    //ret = temp_sensor.set_addressing_mode(ADDRESSING_USE_ROM, 0x00, serial);
-    ret = temp_sensor.set_addressing_mode(ADDRESSING_NONE);
+    //ret = temp_sensor.set_addressing_mode(MAX31825::ADDRESSING_USE_ADD1_ADD0, MAX31825_ADDR_FOR_56_6_KOHM);
+    //ret = temp_sensor.set_addressing_mode(MAX31825::ADDRESSING_USE_ROM, 0x00, serial);
+    ret = temp_sensor.set_addressing_mode(MAX31825::ADDRESSING_NONE);
     if (ret) {
          Serial.println("Set addressing mode failed!");
     }
