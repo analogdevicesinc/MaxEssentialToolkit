@@ -14,7 +14,7 @@ void setup() {
     max3134x.begin();
         
     bool repeat = true;
-    timer_freq_t freq = TIMER_FREQ_16HZ;
+    MAX31341::timer_freq_t freq = MAX31341::TIMER_FREQ_16HZ;
     uint8_t value = 0xFF;
 
     ret = max3134x.timer_init(value, repeat, freq);

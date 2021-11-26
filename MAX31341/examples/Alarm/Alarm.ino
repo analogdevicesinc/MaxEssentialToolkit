@@ -55,17 +55,17 @@ void setup() {
     // Set alarm pin as input
     pinMode(inta_pin, INPUT);
 
-    ret = max3134x.configure_inta_clkin_pin(CONFIGURE_PIN_AS_INTA);
+    ret = max3134x.configure_inta_clkin_pin(MAX31341::CONFIGURE_PIN_AS_INTA);
     if (ret) {
         Serial.println("Configure inta failed!");
     }
 
-    ret = max3134x.set_alarm(ALARM1, &rtc_ctime, ALARM_PERIOD_EVERYSECOND);
+    ret = max3134x.set_alarm(MAX31341::ALARM1, &rtc_ctime, MAX31341::ALARM_PERIOD_EVERYSECOND);
     if (ret) {
         Serial.println("Set alarm failed!");
     }
 
-    ret = max3134x.irq_enable(INTR_ID_ALARM1);
+    ret = max3134x.irq_enable(MAX31341::INTR_ID_ALARM1);
     if (ret) {
         Serial.println("IRQ enable failed!");
     }

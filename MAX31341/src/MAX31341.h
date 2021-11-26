@@ -41,137 +41,6 @@
 #include <time.h>
 
 
-/**
-* @brief	Mode of the comparator
-*/
-typedef enum {
-    POW_MGMT_MODE_COMPARATOR,		/**< Comparator */
-    POW_MGMT_MODE_POWER_MANAGEMENT,	/**< Power Management / Trickle Charger Mode */
-} power_mgmt_mode_t;
-
-/**
-* @brief	Analog comparator threshold voltage
-*/
-typedef enum {
-    COMP_THRESH_1V3,	/**< 1.3V */
-    COMP_THRESH_1V7,	/**< 1.7V */
-    COMP_THRESH_2V0,	/**< 2.0V */
-    COMP_THRESH_2V2,	/**< 2.2V */
-} comp_thresh_t;
-
-/**
-* @brief	Supply voltage select.
-*/
-typedef enum {
-    POW_MGMT_SUPPLY_SEL_AUTO,	/**< Circuit decides whether to use VCC or VBACKUP */
-    POW_MGMT_SUPPLY_SEL_VCC,	/**< Use VCC as supply */
-    POW_MGMT_SUPPLY_SEL_AIN,	/**< Use AIN as supply */
-} power_mgmt_supply_t;
-
-/**
-* @brief	Selection of charging path's resistor value
-*/
-typedef enum {
-    TRICKLE_CHARGER_NO_CONNECTION = 0,   /**< No connect */
-    TRICKLE_CHARGER_3K_S  = 0x08,   /**< 3Kohm in series with a Schottky diode. */
-    TRICKLE_CHARGER_6K_S  = 0x0A,   /**< 6Kohm in series with a Schottky diode. */
-    TRICKLE_CHARGER_11K_S = 0x0B,   /**< 11Kohm in series with a Schottky diode. */
-    TRICKLE_CHARGER_3K_S_2  = 0x0C,   /**< 3Kohm in series with a diode in series with a Schottky diode. */
-    TRICKLE_CHARGER_6K_S_2  = 0x0E,   /**< 6Kohm in series with a diode in series with a Schottky diode. */
-    TRICKLE_CHARGER_11K_S_2 = 0x0F,   /**< 11Kohm in series with a diode in series with a Schottky diode. */
-} trickle_charger_ohm_t;
-
-/**
-* @brief	Timer frequency selection
-*/
-typedef enum {
-    TIMER_FREQ_1024HZ,	/**< 1024Hz */
-    TIMER_FREQ_256HZ,	/**< 256Hz */
-    TIMER_FREQ_64HZ,	/**< 64Hz */
-    TIMER_FREQ_16HZ,	/**< 16Hz */
-} timer_freq_t;
-
-/**
-* @brief	CLKIN frequency selection
-*/
-typedef enum {
-    CLKIN_FREQ_1HZ,		/**< 1Hz*/
-    CLKIN_FREQ_50HZ,	/**< 50Hz */
-    CLKIN_FREQ_60HZ,	/**< 60Hz */
-    CLKIN_FREQ_32768HZ,	/**< 32.768kHz */
-} clkin_freq_t;
-
-/**
-* @brief	Square wave output frequency selection on CLKOUT pin
-*/
-typedef enum {
-    SQUARE_WAVE_OUT_FREQ_1HZ,		/**< 1Hz */
-    SQUARE_WAVE_OUT_FREQ_4096HZ,	/**< 4.098kHz */
-    SQUARE_WAVE_OUT_FREQ_8192HZ,	/**< 8.192kHz */
-    SQUARE_WAVE_OUT_FREQ_32768HZ,	/**< 32.768kHz */
-} square_wave_out_freq_t;
-
-/**
-* @brief	Selection of interrupt ids
-*/
-typedef enum {
-    INTR_ID_ALARM1,		/**< Alarm1 flag */
-    INTR_ID_ALARM2,		/**< Alarm2 flag */
-    INTR_ID_TIMER,		/**< Timer interrupt flag */
-    INTR_ID_RESERVED,
-    INTR_ID_EXTERNAL,	/**< External interrupt flag for DIN1 */
-    INTR_ID_ANALOG,		/**< Analog Interrupt flag / Power fail flag  */
-    INTR_ID_OSF,		/**< Oscillator stop flag */
-    INTR_ID_LOS,		/**< Loss of signal */
-    INTR_ID_END,
-} intr_id_t;
-
-
-/**
-* @brief	Alarm number selection
-*/
-typedef enum {
-    ALARM1,	/**< Alarm number 1 */
-    ALARM2,	/**< Alarm number 2 */
-} alarm_no_t;
-
-/**
-* @brief	Alarm periodicity selection
-*/
-typedef enum {
-    ALARM_PERIOD_EVERYSECOND,	/**< Once per second */
-    ALARM_PERIOD_EVERYMINUTE,	/**< Second match / Once per minute */
-    ALARM_PERIOD_HOURLY,		/**< Second and Minute match */
-    ALARM_PERIOD_DAILY,			/**< Hour, Minute and Second match*/
-    ALARM_PERIOD_WEEKLY,		/**< Day and Time match */
-    ALARM_PERIOD_MONTHLY,		/**< Date and Time match */
-} alarm_period_t;
-
-/**
-* @brief	Selection of INTA/CLKIN pin function
-*/
-typedef enum {
-    CONFIGURE_PIN_AS_INTA,	/**< Configure pin as interrupt out */
-    CONFIGURE_PIN_AS_CLKIN,	/**< Configure pin as external clock in  */
-} config_inta_clkin_pin_t;
-
-/**
-* @brief	Selection of INTB/CLKOUT pin function
-*/
-typedef enum {
-    CONFIGURE_PIN_AS_CLKOUT,	/**< Output is square wave */
-    CONFIGURE_PIN_AS_INTB,		/**< Output is interrupt */
-} config_intb_clkout_pin_t;
-
-/**
- * @brief	Selection of sync delay
- */
-typedef enum {
-    SYNC_DLY_LESS_THAN_1SEC = 0,	/**<  Sync delay less than 1 second, recommended for external 1Hz clock */
-    SYNC_DLY_LESS_THAN_100MS,		/**<  Sync delay less than 100 msec, recommended for external 50Hz/60Hz/32KHz clock */
-    SYNC_DLY_LESS_THAN_10MS,		/**<  Sync delay less than 10 msec, recommended for internal clock */
-} sync_delay_t;
-
 
 /**
  * @brief	RTC base driver class for Maxim Max31341 RTC series.
@@ -180,15 +49,149 @@ class MAX31341
 {
 public:
 	/**
+	* @brief	Mode of the comparator
+	*/
+	typedef enum {
+	    POW_MGMT_MODE_COMPARATOR,		/**< Comparator */
+	    POW_MGMT_MODE_POWER_MANAGEMENT,	/**< Power Management / Trickle Charger Mode */
+	} power_mgmt_mode_t;
+
+	/**
+	* @brief	Analog comparator threshold voltage
+	*/
+	typedef enum {
+	    COMP_THRESH_1V3,	/**< 1.3V */
+	    COMP_THRESH_1V7,	/**< 1.7V */
+	    COMP_THRESH_2V0,	/**< 2.0V */
+	    COMP_THRESH_2V2,	/**< 2.2V */
+	} comp_thresh_t;
+
+	/**
+	* @brief	Supply voltage select.
+	*/
+	typedef enum {
+	    POW_MGMT_SUPPLY_SEL_AUTO,	/**< Circuit decides whether to use VCC or VBACKUP */
+	    POW_MGMT_SUPPLY_SEL_VCC,	/**< Use VCC as supply */
+	    POW_MGMT_SUPPLY_SEL_AIN,	/**< Use AIN as supply */
+	} power_mgmt_supply_t;
+
+	/**
+	* @brief	Selection of charging path's resistor value
+	*/
+	typedef enum {
+	    TRICKLE_CHARGER_NO_CONNECTION = 0,   /**< No connect */
+	    TRICKLE_CHARGER_3K_S  = 0x08,   /**< 3Kohm in series with a Schottky diode. */
+	    TRICKLE_CHARGER_6K_S  = 0x0A,   /**< 6Kohm in series with a Schottky diode. */
+	    TRICKLE_CHARGER_11K_S = 0x0B,   /**< 11Kohm in series with a Schottky diode. */
+	    TRICKLE_CHARGER_3K_S_2  = 0x0C,   /**< 3Kohm in series with a diode in series with a Schottky diode. */
+	    TRICKLE_CHARGER_6K_S_2  = 0x0E,   /**< 6Kohm in series with a diode in series with a Schottky diode. */
+	    TRICKLE_CHARGER_11K_S_2 = 0x0F,   /**< 11Kohm in series with a diode in series with a Schottky diode. */
+	} trickle_charger_ohm_t;
+
+	/**
+	* @brief	Timer frequency selection
+	*/
+	typedef enum {
+	    TIMER_FREQ_1024HZ,	/**< 1024Hz */
+	    TIMER_FREQ_256HZ,	/**< 256Hz */
+	    TIMER_FREQ_64HZ,	/**< 64Hz */
+	    TIMER_FREQ_16HZ,	/**< 16Hz */
+	} timer_freq_t;
+
+	/**
+	* @brief	CLKIN frequency selection
+	*/
+	typedef enum {
+	    CLKIN_FREQ_1HZ,		/**< 1Hz*/
+	    CLKIN_FREQ_50HZ,	/**< 50Hz */
+	    CLKIN_FREQ_60HZ,	/**< 60Hz */
+	    CLKIN_FREQ_32768HZ,	/**< 32.768kHz */
+	} clkin_freq_t;
+
+	/**
+	* @brief	Square wave output frequency selection on CLKOUT pin
+	*/
+	typedef enum {
+	    SQUARE_WAVE_OUT_FREQ_1HZ,		/**< 1Hz */
+	    SQUARE_WAVE_OUT_FREQ_4096HZ,	/**< 4.098kHz */
+	    SQUARE_WAVE_OUT_FREQ_8192HZ,	/**< 8.192kHz */
+	    SQUARE_WAVE_OUT_FREQ_32768HZ,	/**< 32.768kHz */
+	} square_wave_out_freq_t;
+
+	/**
+	* @brief	Selection of interrupt ids
+	*/
+	typedef enum {
+	    INTR_ID_ALARM1,		/**< Alarm1 flag */
+	    INTR_ID_ALARM2,		/**< Alarm2 flag */
+	    INTR_ID_TIMER,		/**< Timer interrupt flag */
+	    INTR_ID_RESERVED,
+	    INTR_ID_EXTERNAL,	/**< External interrupt flag for DIN1 */
+	    INTR_ID_ANALOG,		/**< Analog Interrupt flag / Power fail flag  */
+	    INTR_ID_OSF,		/**< Oscillator stop flag */
+	    INTR_ID_LOS,		/**< Loss of signal */
+	    INTR_ID_END,
+	} intr_id_t;
+
+
+	/**
+	* @brief	Alarm number selection
+	*/
+	typedef enum {
+	    ALARM1,	/**< Alarm number 1 */
+	    ALARM2,	/**< Alarm number 2 */
+	} alarm_no_t;
+
+	/**
+	* @brief	Alarm periodicity selection
+	*/
+	typedef enum {
+	    ALARM_PERIOD_EVERYSECOND,	/**< Once per second */
+	    ALARM_PERIOD_EVERYMINUTE,	/**< Second match / Once per minute */
+	    ALARM_PERIOD_HOURLY,		/**< Second and Minute match */
+	    ALARM_PERIOD_DAILY,			/**< Hour, Minute and Second match*/
+	    ALARM_PERIOD_WEEKLY,		/**< Day and Time match */
+	    ALARM_PERIOD_MONTHLY,		/**< Date and Time match */
+	} alarm_period_t;
+
+	/**
+	* @brief	Selection of INTA/CLKIN pin function
+	*/
+	typedef enum {
+	    CONFIGURE_PIN_AS_INTA,	/**< Configure pin as interrupt out */
+	    CONFIGURE_PIN_AS_CLKIN,	/**< Configure pin as external clock in  */
+	} config_inta_clkin_pin_t;
+
+	/**
+	* @brief	Selection of INTB/CLKOUT pin function
+	*/
+	typedef enum {
+	    CONFIGURE_PIN_AS_CLKOUT,	/**< Output is square wave */
+	    CONFIGURE_PIN_AS_INTB,		/**< Output is interrupt */
+	} config_intb_clkout_pin_t;
+
+	/**
+	 * @brief	Selection of sync delay
+	 */
+	typedef enum {
+	    SYNC_DLY_LESS_THAN_1SEC = 0,	/**<  Sync delay less than 1 second, recommended for external 1Hz clock */
+	    SYNC_DLY_LESS_THAN_100MS,		/**<  Sync delay less than 100 msec, recommended for external 50Hz/60Hz/32KHz clock */
+	    SYNC_DLY_LESS_THAN_10MS,		/**<  Sync delay less than 10 msec, recommended for internal clock */
+	} sync_delay_t;
+
+	/**
 	* @brief	Base class constructor.
 	*
 	* @param[in]	regmap Pointer to device register mappings.
 	* @param[in]	i2c Pointer to I2C bus object for this device.
-	* @param[in]	inta_pin MCU's pin number that device's INTA pin connected
-	* @param[in]	intb_pin MCU's pin number that device's INTB pin connected
+	* @param[in]	i2c_addr slave addr
 	*/
 	MAX31341(TwoWire *i2c, uint8_t i2c_addr);
     
+    /**
+	* @brief  First initialization, must be called before using class function
+	*
+	*/
     void begin(void);
 
     /**
@@ -506,6 +509,222 @@ public:
 	int rtc_stop();
 
 private:
+	typedef struct {
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t seconds : 4;    /**< RTC seconds value. */
+	            uint8_t sec_10  : 3;    /**< RTC seconds in multiples of 10 */
+	            uint8_t         : 1;
+	        } bits;
+	        struct {
+	            uint8_t value   : 7;
+	            uint8_t         : 1;
+	        } bcd;
+	    } seconds;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t minutes : 4;    /**< RTC minutes value */
+	            uint8_t min_10  : 3;    /**< RTC minutes in multiples of 10 */
+	            uint8_t         : 1;
+	        } bits;
+	        struct {
+	            uint8_t value   : 7;
+	            uint8_t         : 1;
+	        } bcd;
+	    } minutes;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t hour       : 4; /**< RTC hours value */
+	            uint8_t hr_10      : 2; /**< RTC hours in multiples of 10 */
+	            uint8_t            : 2;
+	        } bits;
+	        struct {
+	            uint8_t value      : 6;
+	            uint8_t            : 2;
+	        } bcd;
+	    } hours;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t day : 3;    /**< RTC days */
+	            uint8_t     : 5;
+	        } bits;
+	        struct {
+	            uint8_t value : 3;
+	            uint8_t       : 5;
+	        } bcd;
+	    } day;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t date    : 4;    /**< RTC date */
+	            uint8_t date_10 : 2;    /**< RTC date in multiples of 10 */
+	            uint8_t         : 2;
+	        } bits;
+	        struct {
+	            uint8_t value   : 6;
+	            uint8_t         : 2;
+	        } bcd;
+	    } date;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t month    : 4;   /**< RTC months */
+	            uint8_t month_10 : 1;   /**< RTC month in multiples of 10 */
+	            uint8_t          : 2;
+	            uint8_t century  : 1;   /**< Century bit */
+	        } bits;
+	        struct {
+	            uint8_t value   : 5;
+	            uint8_t         : 3;
+	        } bcd;
+	    } month;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t year    : 4;    /**< RTC years */
+	            uint8_t year_10 : 4;    /**< RTC year multiples of 10 */
+	        } bits;
+	        struct {
+	            uint8_t value   : 8;
+	        } bcd;
+	    } year;
+	} regs_rtc_time_t;
+
+
+	typedef struct {
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t seconds : 4;    /**< Alarm1 seconds */
+	            uint8_t sec_10  : 3;    /**< Alarm1 seconds in multiples of 10 */
+	            uint8_t axm1    : 1;    /**< Alarm1 mask bit for minutes */
+	        } bits;
+	        struct {
+	            uint8_t value   : 7;
+	            uint8_t         : 1;
+	        } bcd;
+	    } sec;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t minutes : 4;    /**< Alarm1 minutes */
+	            uint8_t min_10  : 3;    /**< Alarm1 minutes in multiples of 10 */
+	            uint8_t axm2    : 1;    /**< Alarm1 mask bit for minutes */
+	        } bits;
+	        struct {
+	            uint8_t value   : 7;
+	            uint8_t         : 1;
+	        } bcd;
+	    } min;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t hour       : 4; /**< Alarm1 hours */
+	            uint8_t hr_10      : 2; /**< Alarm1 hours in multiples of 10 */
+	            uint8_t            : 1;
+	            uint8_t axm3       : 1; /**< Alarm1 mask bit for hours */
+	        } bits;
+	        struct {
+	            uint8_t value      : 6;
+	            uint8_t            : 2;
+	        } bcd;
+	    } hrs;
+
+	    union {
+	        uint8_t raw;
+	        struct {
+	            uint8_t day_date : 4;   /**< Alarm1 day/date */
+	            uint8_t date_10  : 2;   /**< Alarm1 date in multiples of 10 */
+	            uint8_t dy_dt    : 1;
+	            uint8_t axm4     : 1;   /**< Alarm1 mask bit for day/date */
+	        } bits;
+	        struct {
+	            uint8_t value   : 3;
+	            uint8_t         : 5;
+	        } bcd_day;
+	        struct {
+	            uint8_t value   : 6;
+	            uint8_t         : 2;
+	        } bcd_date;
+	    } day_date;
+	} regs_alarm_t;
+
+
+	typedef union {
+	    uint8_t raw;
+	    struct {
+	        uint8_t swrstn : 1; /**< Software reset */
+	        uint8_t rs     : 2; /**< Square wave output frequency selection on CLKOUT pin */
+	        uint8_t osconz : 1; /**< Oscillator is on when set to 0. Oscillator is off when set to 1. */
+	        uint8_t clksel : 2; /**< Selects the CLKIN frequency */
+	        uint8_t intcn  : 1; /**< Interrupt control bit. Selects the direction of INTB/CLKOUT */
+	        uint8_t eclk   : 1; /**< Enable external clock input */
+	    } bits;
+	} reg_config1_t;
+
+	typedef union {
+	    uint8_t raw;
+	    struct {
+	        uint8_t             : 1;
+	        uint8_t set_rtc     : 1;    /**< Set RTC */
+	        uint8_t rd_rtc      : 1;    /**< Read RTC. */
+	        uint8_t i2c_timeout : 1;    /**< I2C timeout Enable */
+	        uint8_t bref        : 2;    /**< BREF sets the analog comparator threshold voltage. */
+	        uint8_t data_reten  : 1;    /**< Sets the circuit into data retention mode. */
+	        uint8_t             : 1;
+	    } bits;
+	} reg_config2_t;
+
+	typedef union {
+	    uint8_t raw;
+	    struct {
+	        uint8_t tfs    : 2; /**< Timer frequency selection */
+	        uint8_t trpt   : 1; /**< Timer repeat mode. It controls the timer interrupt function along with TM. */
+	        uint8_t        : 1;
+	        uint8_t te     : 1; /**< Timer enable */
+	        uint8_t tpause : 1; /**< Timer Pause.*/
+	        uint8_t        : 2;
+	    } bits;
+	} reg_timer_config_t;
+
+	typedef union {
+	    uint8_t raw;
+	    struct {
+	        uint8_t d_mode      : 2;    /**< Sets the mode of the comparator to one of the two following: comparator mode, and power management mode/trickle charger mode. */
+	        uint8_t d_man_sel   : 1;    /**< Default low. When this bit is low, input control block decides which supply to use. When this bit is high, user can manually select whether to use V<sub>CC</sub> or VBACKUP as supply. */
+	        uint8_t d_vback_sel : 1;    /**< : Default low. When this bit is low, and D_MANUAL_SEL is high, V<sub>CC</sub> is switched to supply. When this bit is high, and D_MANUAL_SEL is high, V<sub>BACKUP</sub> is switched to supply. */
+	        uint8_t             : 4;
+	    } bits;
+	} reg_pwr_mgmt_t;
+
+	typedef union {
+	    uint8_t raw;
+	    struct {
+	        uint8_t sync_delay : 2; /* Sync delay to take for the internal countdown chain to reset after the rising edge of Set_RTC */
+	        uint8_t            : 6;
+	    } bits;
+	} reg_clock_sync_t;
+
+	typedef union {
+	    uint8_t raw;
+	    struct {
+	        uint8_t            : 4; 
+	        uint8_t rev_id     : 4; /* Revision Identification Register */
+	    } bits;
+	} reg_rev_id_t;
+
 	TwoWire *m_i2c;
 	uint8_t m_slave_addr;
 
