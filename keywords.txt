@@ -1,0 +1,136 @@
+################################################
+#
+#  					MAX31889
+#
+################################################
+MAX31889	KEYWORD1
+status_t	KEYWORD1
+gpio_t	KEYWORD1
+gpio_mode_t	KEYWORD1
+int_mode_t	KEYWORD1
+id_t	KEYWORD1
+fifo_cfg_t KEYWORD1
+
+get_id	KEYWORD2
+clear_flags	KEYWORD2
+get_status	KEYWORD2
+set_interrupt	KEYWORD2
+config_gpio	KEYWORD2
+get_gpio_state	KEYWORD2
+set_gpio_state	KEYWORD2
+get_alarm_temp	KEYWORD2
+set_alarm_temp	KEYWORD2
+start_meas	KEYWORD2
+get_num_of_sample	KEYWORD2
+read_samples	KEYWORD2
+flush_fifo	KEYWORD2
+get_fifo_cfg	KEYWORD2
+set_fifo_cfg	KEYWORD2
+set_almost_full_depth	KEYWORD2
+reset_registers	KEYWORD2
+
+GPIO_NUM_0	LITERAL1
+GPIO_NUM_1	LITERAL1
+GPIO_NUM_MAX	LITERAL1
+GPIO_MODE_0	LITERAL1
+GPIO_MODE_1	LITERAL1
+GPIO_MODE_2	LITERAL1
+GPIO_MODE_3	LITERAL1
+GPIO_MODE_MAX	LITERAL1
+INT_TEMP_RDY	LITERAL1
+INT_TEMP_HIGH	LITERAL1
+INT_TEMP_LOW	LITERAL1
+INT_FIFO_ALMOST_FULL	LITERAL1
+
+################################################
+#
+#  					MAX31827
+#
+################################################
+MAX31827	KEYWORD1
+status_t	KEYWORD1
+conv_period_t	KEYWORD1
+resolution_t	KEYWORD1
+mode_t	KEYWORD1
+fault_t	KEYWORD1
+
+get_status	KEYWORD2
+set_temp	KEYWORD2
+set_alarm	KEYWORD2
+get_alarm	KEYWORD2
+set_alarm_hyst	KEYWORD2
+get_alarm_hyst	KEYWORD2
+
+FAULT_NUMBER_1	LITERAL1
+FAULT_NUMBER_2	LITERAL1
+FAULT_NUMBER_4	LITERAL1
+FAULT_NUMBER_8	LITERAL1
+RESOLUTION_8_BIT	LITERAL1
+RESOLUTION_9_BIT	LITERAL1
+RESOLUTION_10_BIT	LITERAL1
+RESOLUTION_12_BIT	LITERAL1
+PERIOD_0_SHUTDOWN	LITERAL1
+PERIOD_1_DIV_64SEC	LITERAL1
+PERIOD_1_DIV_32SEC	LITERAL1
+PERIOD_1_DIV_16SEC	LITERAL1
+PERIOD_1_DIV_4SEC	LITERAL1
+PERIOD_1_DIV_1SEC	LITERAL1
+PERIOD_4_DIV_1SEC	LITERAL1
+PERIOD_8_DIV_1SEC	LITERAL1
+MODE_COMPARE	LITERAL1
+MODE_INTERRUPT	LITERAL1
+
+
+
+################################################
+#
+#  					MAX31825
+#
+################################################
+MAX31825	KEYWORD1
+status_t	KEYWORD1
+conv_period_t	KEYWORD1
+resolution_t	KEYWORD1
+mode_t	KEYWORD1
+
+read_rom    KEYWORD2
+get_status	KEYWORD2
+start_meas  KEYWORD2
+get_temp	KEYWORD2
+set_alarm	KEYWORD2
+get_alarm	KEYWORD2
+set_conv_rate	KEYWORD2
+extend_mode_status	KEYWORD2
+set_resolution	KEYWORD2
+set_cmp_int_mode	KEYWORD2
+get_conf_reg	KEYWORD2
+
+RESOLUTION_8_BIT	LITERAL1
+RESOLUTION_9_BIT	LITERAL1
+RESOLUTION_10_BIT	LITERAL1
+RESOLUTION_12_BIT	LITERAL1
+PERIOD_0_SHUTDOWN	LITERAL1
+PERIOD_1_DIV_64SEC	LITERAL1
+PERIOD_1_DIV_32SEC	LITERAL1
+PERIOD_1_DIV_16SEC	LITERAL1
+PERIOD_1_DIV_4SEC	LITERAL1
+PERIOD_1_DIV_1SEC	LITERAL1
+PERIOD_4_DIV_1SEC	LITERAL1
+PERIOD_8_DIV_1SEC	LITERAL1
+MODE_COMPARE	LITERAL1
+MODE_INTERRUPT	LITERAL1
+
+
+################################################
+#
+#  					MAX31341
+#
+################################################
+MAX31341	KEYWORD1
+
+
+get_version	KEYWORD2
+
+
+FAULT_NUMBER_1	LITERAL1
+
