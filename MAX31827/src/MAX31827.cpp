@@ -187,7 +187,7 @@ void MAX31827::begin(void)
     m_i2c->begin();
 }
 
-int MAX31827::get_status(max31827_status_t &stat)
+int MAX31827::get_status(status_t &stat)
 {
     int ret = 0;
     uint16_t cfg;
@@ -319,7 +319,7 @@ int MAX31827::set_timeout_status(bool enable)
     return ret;
 }
 
-int MAX31827::set_resolution(max31827_resolution_t resolution)
+int MAX31827::set_resolution(resolution_t resolution)
 {
     int  ret = 0;
     uint16_t cfg;
@@ -363,7 +363,7 @@ int MAX31827::set_alarm_polarity(bool high)
     return ret;
 }
 
-int MAX31827::set_cmp_int_mode(max31827_mode_t mode)
+int MAX31827::set_cmp_int_mode(mode_t mode)
 {
     int  ret = 0;
     uint16_t cfg;
@@ -384,7 +384,7 @@ int MAX31827::set_cmp_int_mode(max31827_mode_t mode)
     return ret;
 }
 
-int MAX31827::set_fault_number(max31827_fault_t fault)
+int MAX31827::set_fault_number(fault_t fault)
 {
     int  ret = 0;
     uint16_t cfg;
@@ -404,7 +404,7 @@ int MAX31827::set_fault_number(max31827_fault_t fault)
     return ret;
 }
 
-int MAX31827::start_meas(max31827_conv_period_t period)
+int MAX31827::start_meas(conv_period_t period)
 {
     int  ret = 0;
     uint16_t cfg;

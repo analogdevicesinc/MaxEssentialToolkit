@@ -40,45 +40,6 @@
 #include "Arduino.h"
 #include <Wire.h>
 
-typedef struct {
-    bool temp_ready; // true: ready, false: not ready
-    bool pec_err;    // true: PEC error occur, false: No error
-    bool temp_low;
-    bool temp_high; 
-} max31827_status_t;
-
-typedef enum {
-    PERIOD_0_SHUTDOWN  = MAX31827_S_CFG_CONV_RATE_SHUTDOWN,
-    PERIOD_1_DIV_64SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_64SEC,
-    PERIOD_1_DIV_32SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_32SEC,
-    PERIOD_1_DIV_16SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_16SEC,
-    PERIOD_1_DIV_4SEC  = MAX31827_S_CFG_CONV_RATE_1_DIV_4SEC,
-    PERIOD_1_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_1_DIV_1SEC,
-    PERIOD_4_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_4_DIV_1SEC,
-    PERIOD_8_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_8_DIV_1SEC,
-    // One Shut moe
-    PERIOD_ONE_SHOT,
-} max31827_conv_period_t;
-
-typedef enum {
-    RESOLUTION_8_BIT   = MAX31827_S_CFG_RESOLUTION_8_BIT,
-    RESOLUTION_9_BIT   = MAX31827_S_CFG_RESOLUTION_9_BIT,
-    RESOLUTION_10_BIT  = MAX31827_S_CFG_RESOLUTION_10_BIT,
-    RESOLUTION_12_BIT  = MAX31827_S_CFG_RESOLUTION_12_BIT
-} max31827_resolution_t;
-
-typedef enum {
-    MODE_COMPARE   = 0,
-    MODE_INTERRUPT = 1
-} max31827_mode_t;
-
-typedef enum {
-    FAULT_NUMBER_1   = MAX31827_S_CFG_FAULT_QUE_1,
-    FAULT_NUMBER_2   = MAX31827_S_CFG_FAULT_QUE_2,
-    FAULT_NUMBER_4   = MAX31827_S_CFG_FAULT_QUE_4,
-    FAULT_NUMBER_8   = MAX31827_S_CFG_FAULT_QUE_8
-} max31827_fault_t;
-
 
 /*
  *
@@ -87,12 +48,51 @@ typedef enum {
  */
 class MAX31827 {
     public:
+        typedef struct {
+            bool temp_ready; // true: ready, false: not ready
+            bool pec_err;    // true: PEC error occur, false: No error
+            bool temp_low;
+            bool temp_high; 
+        } status_t;
+
+        typedef enum {
+            PERIOD_0_SHUTDOWN  = MAX31827_S_CFG_CONV_RATE_SHUTDOWN,
+            PERIOD_1_DIV_64SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_64SEC,
+            PERIOD_1_DIV_32SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_32SEC,
+            PERIOD_1_DIV_16SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_16SEC,
+            PERIOD_1_DIV_4SEC  = MAX31827_S_CFG_CONV_RATE_1_DIV_4SEC,
+            PERIOD_1_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_1_DIV_1SEC,
+            PERIOD_4_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_4_DIV_1SEC,
+            PERIOD_8_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_8_DIV_1SEC,
+            // One Shut moe
+            PERIOD_ONE_SHOT,
+        } conv_period_t;
+
+        typedef enum {
+            RESOLUTION_8_BIT   = MAX31827_S_CFG_RESOLUTION_8_BIT,
+            RESOLUTION_9_BIT   = MAX31827_S_CFG_RESOLUTION_9_BIT,
+            RESOLUTION_10_BIT  = MAX31827_S_CFG_RESOLUTION_10_BIT,
+            RESOLUTION_12_BIT  = MAX31827_S_CFG_RESOLUTION_12_BIT
+        } resolution_t;
+
+        typedef enum {
+            MODE_COMPARE   = 0,
+            MODE_INTERRUPT = 1
+        } mode_t;
+
+        typedef enum {
+            FAULT_NUMBER_1   = MAX31827_S_CFG_FAULT_QUE_1,
+            FAULT_NUMBER_2   = MAX31827_S_CFG_FAULT_QUE_2,
+            FAULT_NUMBER_4   = MAX31827_S_CFG_FAULT_QUE_4,
+            FAULT_NUMBER_8   = MAX31827_S_CFG_FAULT_QUE_8
+        } fault_t;
+
         // constructer
         MAX31827(TwoWire *i2c, uint8_t i2c_addr);
         //
         void begin(void);
         //
-        int get_status(max31827_status_t &stat);
+        int get_status(status_t &stat);
         
         //
         int set_temp(float temp, uint8_t reg);
@@ -101,15 +101,15 @@ class MAX31827 {
         int set_alarm_hyst(float tl_hyst, float th_hyst);
         int get_alarm_hyst(float &tl_hyst, float &th_hyst);
 
-        int start_meas(max31827_conv_period_t period);
+        int start_meas(conv_period_t period);
         int get_temp(float &temp, uint8_t reg=MAX31827_R_TEMPERATURE);
         //
         int set_pec_status(bool enable);
         int set_timeout_status(bool enable);
-        int set_resolution(max31827_resolution_t res);
+        int set_resolution(resolution_t res);
         int set_alarm_polarity(bool high);
-        int set_cmp_int_mode(max31827_mode_t mode);
-        int set_fault_number(max31827_fault_t fault);
+        int set_cmp_int_mode(mode_t mode);
+        int set_fault_number(fault_t fault);
 
     private:
         uint8_t m_slave_addr;

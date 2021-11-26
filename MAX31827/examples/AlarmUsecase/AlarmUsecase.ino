@@ -39,7 +39,7 @@ void setup()  {
         Serial.println(temp_high, 2);
     }
 
-    ret = temp_sensor.start_meas(PERIOD_4_DIV_1SEC);
+    ret = temp_sensor.start_meas(MAX31827::PERIOD_4_DIV_1SEC);
     if (ret) {
         Serial.println("Start measurement failed!");
     } else {
@@ -54,7 +54,7 @@ void loop()  {
     
     if (pin_state == HIGH) {
         int ret;
-        max31827_status_t  status;
+        MAX31827::status_t  status;
         float temp = 0;
 
         ret = temp_sensor.get_status(status);

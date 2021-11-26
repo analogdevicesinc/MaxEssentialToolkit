@@ -16,9 +16,9 @@ void setup()  {
 
 void loop()  {
     int ret;
-    max31827_status_t  status;
+    MAX31827::status_t  status;
 
-    ret = temp_sensor.start_meas(PERIOD_ONE_SHOT);
+    ret = temp_sensor.start_meas(MAX31827::PERIOD_ONE_SHOT);
     if (ret) {
         Serial.println("Start measurement failed!");
         return;
