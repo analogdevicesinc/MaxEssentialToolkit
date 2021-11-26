@@ -11,7 +11,7 @@ int pin_trigger = 46; // Connects to GPIO1 pin of MAX31889
 void print_sensor_info()  {
     int ret;
     char buf[32];
-    max31889_id_t id;
+    MAX31889::id_t id;
     
     ret = temp_sensor.get_id(id);
     if (ret) {
@@ -47,12 +47,12 @@ void setup()  {
     temp_sensor.begin();
     print_sensor_info();
 
-    ret = temp_sensor.config_gpio(GPIO_NUM_0, GPIO_MODE_3);// GPIO0 mode INTB
+    ret = temp_sensor.config_gpio(MAX31889::GPIO_NUM_0, MAX31889::GPIO_MODE_3);// GPIO0 mode INTB
     if (ret) {
         Serial.println("GPIO0 configure failed");
     }
 
-    ret = temp_sensor.config_gpio(GPIO_NUM_1, GPIO_MODE_3);// GPIO1 mode CONVERT Trigger
+    ret = temp_sensor.config_gpio(MAX31889::GPIO_NUM_1, MAX31889::GPIO_MODE_3);// GPIO1 mode CONVERT Trigger
     if (ret) {
         Serial.println("GPIO1 configure failed");
     }
@@ -63,7 +63,7 @@ void setup()  {
     // Connects to MAX31889 GPIO0 pin
     pinMode(pin_alarm, INPUT);
 
-    ret = temp_sensor.set_interrupt(INT_TEMP_RDY, true);
+    ret = temp_sensor.set_interrupt(MAX31889::INT_TEMP_RDY, true);
     if (ret) {
         Serial.println("Interrupt initialization failed!");
     }

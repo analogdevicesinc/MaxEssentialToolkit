@@ -175,14 +175,14 @@ int MAX31889::reset_registers(void)
 int MAX31889::clear_flags(void)
 {
     int ret = 0;
-    max31889_status_t stat;
+    status_t stat;
 
     ret = get_status(stat);
 
     return ret;
 }
 
-int MAX31889::get_status(max31889_status_t &stat)
+int MAX31889::get_status(status_t &stat)
 {
     int ret = 0;
     uint8_t byt;
@@ -206,7 +206,7 @@ int MAX31889::get_status(max31889_status_t &stat)
     return ret;
 }
 
-int MAX31889::config_gpio(max31889_gpio_t gpio, max31889_gpio_mode_t mode)
+int MAX31889::config_gpio(gpio_t gpio, gpio_mode_t mode)
 {
     int ret = 0;
     uint8_t byt;
@@ -229,7 +229,7 @@ int MAX31889::config_gpio(max31889_gpio_t gpio, max31889_gpio_mode_t mode)
     return ret;
 }
 
-int MAX31889::set_gpio_state(max31889_gpio_t gpio, int state)
+int MAX31889::set_gpio_state(gpio_t gpio, int state)
 {
     int ret = 0;
     uint8_t byt;
@@ -254,7 +254,7 @@ int MAX31889::set_gpio_state(max31889_gpio_t gpio, int state)
     return ret;
 }
 
-int MAX31889::get_gpio_state(max31889_gpio_t gpio)
+int MAX31889::get_gpio_state(gpio_t gpio)
 {
     int ret = 0;
     uint8_t byt;
@@ -275,7 +275,7 @@ int MAX31889::get_gpio_state(max31889_gpio_t gpio)
     }
 }
 
-int MAX31889::set_interrupt(max31889_int_mode_t interrupt, bool is_enable)
+int MAX31889::set_interrupt(int_mode_t interrupt, bool is_enable)
 {
     int ret = 0;
     uint8_t byt;
@@ -341,7 +341,7 @@ int MAX31889::get_alarm_temp(float &temp_low, float &temp_high)
     return ret;
 }
 
-int MAX31889::get_id(max31889_id_t &id)
+int MAX31889::get_id(id_t &id)
 {
     int ret = 0;
 
@@ -444,7 +444,7 @@ int MAX31889::set_almost_full_depth(unsigned int num_of_samples)
     return ret;
 }
 
-int MAX31889::get_fifo_cfg(max31889_fifo_cfg_t &cfg)
+int MAX31889::get_fifo_cfg(fifo_cfg_t &cfg)
 {
     int ret = 0;
     uint8_t byt;
@@ -461,7 +461,7 @@ int MAX31889::get_fifo_cfg(max31889_fifo_cfg_t &cfg)
     return ret;
 }
 
-int MAX31889::set_fifo_cfg(max31889_fifo_cfg_t cfg)
+int MAX31889::set_fifo_cfg(fifo_cfg_t cfg)
 {
     int ret = 0;
     uint8_t byt = 0;

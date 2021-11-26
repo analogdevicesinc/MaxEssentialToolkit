@@ -4,12 +4,12 @@
 #define ALARM_HIGH   (32.0f)  // Update here depend on your environment conditions
 
 MAX31889 temp_sensor(&Wire);
-max31889_status_t sensor_status;
+MAX31889::status_t sensor_status;
 
 void print_sensor_info()  {
     int ret;
     char buf[32];
-    max31889_id_t id;
+    MAX31889::id_t id;
     
     ret = temp_sensor.get_id(id);
     if (ret) {

@@ -35,7 +35,7 @@
 #define _MAX31889_H_
 
 
-#include "MAX31889_registers.h"
+#include <MAX31889_registers.h>
 
 #include "Arduino.h"
 #include <Wire.h>
@@ -43,48 +43,6 @@
 
 #define MAX31889_FIFO_DEPTH         32   // Max Sample count in fifo
 #define MAX31889_DEFAULT_I2C_ADDR   0x50 // 7 bit address
-
-typedef struct
-{
-    uint8_t fifo_almost_full;
-    uint8_t temp_low;
-    uint8_t temp_high;
-    uint8_t temp_ready; 
-}max31889_status_t;
-
-typedef enum {
-    GPIO_NUM_0 = 0,
-    GPIO_NUM_1,
-    GPIO_NUM_MAX
-} max31889_gpio_t;
-
-typedef enum {
-    GPIO_MODE_0 = 0,
-    GPIO_MODE_1,
-    GPIO_MODE_2,
-    GPIO_MODE_3,
-    GPIO_MODE_MAX
-} max31889_gpio_mode_t;
-
-typedef enum {
-    INT_TEMP_RDY         = MAX31889_F_INT_EN_TEMP_RDY,
-    INT_TEMP_HIGH        = MAX31889_F_INT_EN_TEMP_HI,
-    INT_TEMP_LOW         = MAX31889_F_INT_EN_TEMP_LO,
-    INT_FIFO_ALMOST_FULL = MAX31889_F_INT_EN_A_FULL
-} max31889_int_mode_t;
-
-typedef struct
-{
-    uint8_t rom_id[6];
-    uint8_t part_id; 
-}max31889_id_t;
-
-typedef struct
-{
-    uint8_t roolover;
-    uint8_t allmost_full_type;
-    uint8_t stat_clear; 
-}max31889_fifo_cfg_t;
 
 /*
  *
@@ -94,19 +52,58 @@ typedef struct
 class MAX31889
 {
     public:
+        typedef struct {
+            uint8_t fifo_almost_full;
+            uint8_t temp_low;
+            uint8_t temp_high;
+            uint8_t temp_ready; 
+        } status_t;
+
+        typedef enum {
+            GPIO_NUM_0 = 0,
+            GPIO_NUM_1,
+            GPIO_NUM_MAX
+        } gpio_t;
+
+        typedef enum {
+            GPIO_MODE_0 = 0,
+            GPIO_MODE_1,
+            GPIO_MODE_2,
+            GPIO_MODE_3,
+            GPIO_MODE_MAX
+        } gpio_mode_t;
+
+        typedef enum {
+            INT_TEMP_RDY         = MAX31889_F_INT_EN_TEMP_RDY,
+            INT_TEMP_HIGH        = MAX31889_F_INT_EN_TEMP_HI,
+            INT_TEMP_LOW         = MAX31889_F_INT_EN_TEMP_LO,
+            INT_FIFO_ALMOST_FULL = MAX31889_F_INT_EN_A_FULL
+        } int_mode_t;
+
+        typedef struct {
+            uint8_t rom_id[6];
+            uint8_t part_id; 
+        } id_t;
+
+        typedef struct {
+            uint8_t roolover;
+            uint8_t allmost_full_type;
+            uint8_t stat_clear; 
+        } fifo_cfg_t;
+
         // constructer
         MAX31889(TwoWire *i2c, uint8_t i2c_addr = MAX31889_DEFAULT_I2C_ADDR);
         void begin(void);
         // identifier
-        int get_id(max31889_id_t &id);
+        int get_id(id_t &id);
         //
         int clear_flags(void);
-        int get_status(max31889_status_t &stat);
-        int set_interrupt(max31889_int_mode_t interrupt, bool is_enable);
+        int get_status(status_t &stat);
+        int set_interrupt(int_mode_t interrupt, bool is_enable);
         // gpio functions
-        int config_gpio(max31889_gpio_t gpio, max31889_gpio_mode_t mode);
-        int get_gpio_state(max31889_gpio_t gpio);
-        int set_gpio_state(max31889_gpio_t gpio, int state);
+        int config_gpio(gpio_t gpio, gpio_mode_t mode);
+        int get_gpio_state(gpio_t gpio);
+        int set_gpio_state(gpio_t gpio, int state);
         //
         int get_alarm_temp(float &temp_low, float &temp_high);
         int set_alarm_temp(float temp_low=-40.0, float temp_high=125.0);
@@ -117,8 +114,8 @@ class MAX31889
         
         // fifo functions
         int flush_fifo();
-        int get_fifo_cfg(max31889_fifo_cfg_t &cfg);
-        int set_fifo_cfg(max31889_fifo_cfg_t cfg);
+        int get_fifo_cfg(fifo_cfg_t &cfg);
+        int set_fifo_cfg(fifo_cfg_t cfg);
         int set_almost_full_depth(unsigned int num_of_samples);
 
         // generic functions

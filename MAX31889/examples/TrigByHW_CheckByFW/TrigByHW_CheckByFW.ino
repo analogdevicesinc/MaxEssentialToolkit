@@ -2,7 +2,7 @@
 
 
 MAX31889 temp_sensor(&Wire);
-max31889_status_t sensor_status;
+MAX31889::status_t sensor_status;
 // Pin 46 is P5.6 (for MAX32630FTHR Board)
 // More detail here: https://os.mbed.com/platforms/MAX32630FTHR/
 int pinTrigger = 46; // Connects to GPIO1 pin of MAX31889
@@ -10,7 +10,7 @@ int pinTrigger = 46; // Connects to GPIO1 pin of MAX31889
 void print_sensor_info()  {
     int ret;
     char buf[32];
-    max31889_id_t id;
+    MAX31889::id_t id;
     
     ret = temp_sensor.get_id(id);
     if (ret) {
@@ -46,7 +46,7 @@ void setup()  {
     temp_sensor.begin();
     print_sensor_info();
 
-    ret = temp_sensor.config_gpio(GPIO_NUM_1, GPIO_MODE_3);// Configure GPIO1 as CONVERT Trigger
+    ret = temp_sensor.config_gpio(MAX31889::GPIO_NUM_1, MAX31889::GPIO_MODE_3);// Configure GPIO1 as CONVERT Trigger
     if (ret) {
         Serial.println("GPIO1 configuration failed!");
     }

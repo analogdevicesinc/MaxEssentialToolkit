@@ -9,7 +9,7 @@ int pin_alarm = 43; // MAX31889 GPIO0 pin connects to MAX32630FTHR P5.3
 void print_sensor_info()  {
     int ret;
     char buf[32];
-    max31889_id_t id;
+    MAX31889::id_t id;
     
     ret = temp_sensor.get_id(id);
     if (ret) {
@@ -39,7 +39,7 @@ void setup()  {
     temp_sensor.begin();
     print_sensor_info();
 
-    ret = temp_sensor.config_gpio(GPIO_NUM_0, GPIO_MODE_3);// GPIO0 mode INTB
+    ret = temp_sensor.config_gpio(MAX31889::GPIO_NUM_0, MAX31889::GPIO_MODE_3);// GPIO0 mode INTB
     if (ret) {
         Serial.println("GPIO configuration failed!");
     }
@@ -47,7 +47,7 @@ void setup()  {
     // Attach interrupt on INT pin of MAX31889.
     pinMode(pin_alarm, INPUT);
 
-    ret = temp_sensor.set_interrupt(INT_TEMP_RDY, true);
+    ret = temp_sensor.set_interrupt(MAX31889::INT_TEMP_RDY, true);
     if (ret) {
         Serial.println("Interrupt initialization failed!");
     }
