@@ -40,7 +40,7 @@
 #include "Arduino.h"
 #include <Wire.h>
 
-#define MAX40080_FULL_RANGE_VOLTAGE (36.0f) // full Range 36.0V
+#define MAX40080_FULL_RANGE_VOLTAGE (37.5f) // full Range 37.5V
 #define MAX40080_VOLTAGE_STEP_PER_BIT (MAX40080_FULL_RANGE_VOLTAGE/4095.0f) // 12bit ADC count (4095)
 
 #define MAX40080_ERR_UNKNOWN            (-1)
