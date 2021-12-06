@@ -43,6 +43,10 @@
 #define MAX40080_FULL_RANGE_VOLTAGE (36.0f) // full Range 36.0V
 #define MAX40080_VOLTAGE_STEP_PER_BIT (MAX40080_FULL_RANGE_VOLTAGE/4095.0f) // 12bit ADC count (4095)
 
+#define MAX40080_ERR_UNKNOWN            (-1)
+#define MAX40080_ERR_CRC_MISMATCH       (-2)
+#define MAX40080_ERR_DATA_NOT_VALID     (-3)
+
 /*
  *
  * MAX40080 
@@ -50,40 +54,10 @@
  */
 class MAX40080 {
     public:
-        typedef union {
-            uint16_t raw;
-            struct {
-                uint16_t wakeup           : 1; // Wakeup current reached
-                uint16_t conv_ready       : 1; // Indicated ADC convertion completed
-                uint16_t over_i           : 1; //  
-                uint16_t over_v           : 1; //  
-                uint16_t under_v          : 1; //  
-                uint16_t i2c_timeout      : 1; //  
-                uint16_t overflow_warning : 1; //  
-                uint16_t overflow         : 1; // When set to 1 it indicates that the FIFO is completely full with 64 data on it.
-                uint16_t fifo_data_count  : 6; // 6-bit counter that indicates the number of data that are currently inside the FIFO. Range is from 0 to 63.
-            } bits;
-        } reg_status_t;
-
-        typedef union {
-            uint16_t raw;
-            struct {
-                uint16_t mode           : 3; // operation_mode_t
-                uint16_t i2c_timeout    : 1; // 0 or 1
-                uint16_t alert          : 1; // 0 or 1
-                uint16_t pec            : 1; // 0 or 1
-                uint16_t input_range    : 1; // input_range_t
-                uint16_t stay_hs_mode   : 1; // 0 or 1
-                uint16_t adc_sample_rate: 4; // adc_sample_rate_t
-                uint16_t digital_filter : 3; // digital_filter_t
-                uint16_t internal_use   : 1; // 0 or 1
-            } bits;
-        } reg_cfg_t;
-
         typedef enum {
-            MEAS_CURRENT_ONLY,
-            MEAS_VOLTAGE_ONLY,
-            MEAS_CURRENT_AND_VOLTAGE,
+            MEAS_CURRENT_ONLY        = 0,
+            MEAS_VOLTAGE_ONLY        = 1,
+            MEAS_CURRENT_AND_VOLTAGE = 2,
             MEAS_NONE,         
         } measure_type_t;
 
@@ -114,7 +88,7 @@ class MAX40080 {
             INPUT_RANGE_10mV 
         } input_range_t;
 
-        typedef enum {
+        typedef enum { // D stands for Dot
             SAMPLE_RATE_15_KSPS           = 0, //
             SAMPLE_RATE_23D45_KSPS        = 2, //
             SAMPLE_RATE_30_KSPS           = 3, //
@@ -133,7 +107,7 @@ class MAX40080 {
          } adc_sample_rate_t;
 
         typedef enum {
-            AVERAGE_NO             = 0, // No average
+            AVERAGE_1_SAMPLE       = 0, // No average
             AVERAGE_8_SAMPLES      = 1, // Average among   8 samples
             AVERAGE_16_SAMPLES     = 2, // Average among  16 samples
             AVERAGE_32_SAMPLES     = 3, // Average among  32 samples
@@ -141,19 +115,51 @@ class MAX40080 {
             AVERAGE_128_SAMPLES    = 5  // Average among 128 samples
          } digital_filter_t;
 
+        typedef struct {
+            bool    wakeup;         // Wakeup current reached
+            bool    conv_ready;     // Indicated ADC convertion completed
+            bool    over_i;         //  
+            bool    over_v;         //  
+            bool    under_v;        //  
+            bool    i2c_timeout;    //  
+            bool    fifo_alarm;     //  
+            bool    fifo_overflow;  // When set to 1 it indicates that the FIFO is completely full with 64 data on it.
+            uint8_t fifo_data_count;// 6-bit counter that indicates the number of data that are currently inside the FIFO. Range is from 0 to 63.
+        } reg_status_t;
+
+        typedef struct {
+            operation_mode_t   mode;
+            bool               i2c_timeout;
+            bool               alert;
+            bool               pec;
+            input_range_t      input_range;
+            bool               stay_hs_mode;
+            adc_sample_rate_t  adc_sample_rate;
+            digital_filter_t   digital_filter;
+        } reg_cfg_t;
+        
+        typedef struct {
+            measure_type_t store_iv; // These two bits determine whether the device measures and stores into the FIFO either current or voltage or both current and voltage.
+            uint8_t overflow_warning;// Overflow threshold
+            bool rollover;           // Roll over
+            bool flush;              // flush fifo               
+        } reg_fifo_cfg_t;
+        
         // constructer
         MAX40080(TwoWire *i2c, uint8_t i2c_addr, float shuntResistor);
         //
         void begin(void);
         
         int get_status(reg_status_t &stat);
-        int fifo_configure(measure_type_t typ, uint8_t overflow_thrshld=0x34, bool rool_over_status=false);
         int flush_fifo(void);
         int set_interrupt_status(intr_id_t interrupt, bool status);
+        int clear_interrupts(void);
         int clear_interrupt_flag(intr_id_t interrupt);
 
         int get_configuration(reg_cfg_t &cfg);
         int set_configuration(reg_cfg_t  cfg);
+        int get_fifo_configuration(reg_fifo_cfg_t &cfg);
+        int set_fifo_configuration(reg_fifo_cfg_t  cfg);
 
         int get_voltage(float &voltage);
         int get_current(float  &current);
@@ -170,27 +176,17 @@ class MAX40080 {
         int set_threshold_under_voltage(float voltage);
         int set_wakeup_current(float  current);
 
+        int send_quick_command(void);
+        
     private:
-        typedef union {
-            uint16_t raw;
-            struct {
-                uint16_t store_v_i        : 2; /**< These two bits determine whether the device measures and stores into the FIFO either current or voltage or both current and voltage. */
-                uint16_t                  : 6; /**< Not used */
-                uint16_t overflow_thrshld : 6; /**< Overflow threshold */
-                uint16_t rool_over        : 1; /**< Rool over */
-                uint16_t flush            : 1; /**< flush fifo */
-            } bits;
-        } reg_fifo_cfg_t;
-
         TwoWire *m_i2c;
         uint8_t m_slave_addr;
         reg_cfg_t m_reg_cfg;
         float m_shuntResistor;
         
-
         int write_register(uint8_t reg, const uint8_t *buf, uint8_t len=1);
         int read_register(uint8_t reg, uint8_t *buf, uint8_t len=1);
-
+        
         uint16_t convert_voltage_2_count(float voltage, int resolution);
         float convert_count_2_voltage(uint16_t count, int resolution);
         
