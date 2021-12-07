@@ -31,14 +31,40 @@
 *******************************************************************************
 */
 
-#ifndef _MAX_ESSENTIAL_H_
-#define _MAX_ESSENTIAL_H_
+#ifndef _MAX31343_REGISTERS_H_
+#define _MAX31343_REGISTERS_H_
 
-#include <MAX31889/MAX31889.h>
-#include <MAX31827/MAX31827.h>
-#include <MAX31825/MAX31825.h>
-#include <MAX31341/MAX31341.h>
-#include <MAX31343/MAX31343.h>
-#include <MAX40080/MAX40080.h>
+#define MAX31343_I2C_ADDRESS                      0x68
 
-#endif /* _MAX_ESSENTIAL_H_ */
+#define MAX31343_R_INT_STATUS_REG_ADDR	        ( 0x00 )
+#define MAX31343_R_INT_EN_REG_ADDR		        ( 0x01 )
+#define MAX31343_R_RTC_RESET_ADDR			    ( 0x02 )
+#define MAX31343_R_CONFIG_REG1_ADDR		        ( 0x03 )
+#define MAX31343_R_CONFIG_REG2_ADDR		        ( 0x04 )
+#define MAX31343_R_TIMER_CONFIG_ADDR		    ( 0x05 )
+#define MAX31343_R_SECONDS_ADDR			        ( 0x06 )
+#define MAX31343_R_MINUTES_ADDR			        ( 0x07 )
+#define MAX31343_R_HOURS_ADDR				    ( 0x08 )
+#define MAX31343_R_DAY_ADDR				        ( 0x09 )
+#define MAX31343_R_DATE_ADDR				    ( 0x0A )
+#define MAX31343_R_MONTH_ADDR				    ( 0x0B )
+#define MAX31343_R_YEAR_ADDR				    ( 0x0C )
+#define MAX31343_R_ALM1_SEC_ADDR			    ( 0x0D )
+#define MAX31343_R_ALM1_MIN_ADDR			    ( 0x0E )
+#define MAX31343_R_ALM1_HRS_ADDR			    ( 0x0F )
+#define MAX31343_R_ALM1DAY_DATE_ADDR		    ( 0x10 )
+#define MAX31343_R_ALM1_MON_ADDR			    ( 0x11 )
+#define MAX31343_R_ALM1_YEAR_ADDR			    ( 0x12 )
+#define MAX31343_R_ALM2_MIN_ADDR			    ( 0x13 )
+#define MAX31343_R_ALM2_HRS_ADDR			    ( 0x14 )
+#define MAX31343_R_ALM2DAY_DATE_ADDR		    ( 0x15 )
+#define MAX31343_R_TIMER_COUNT_ADDR		        ( 0x16 )
+#define MAX31343_R_TIMER_INIT_ADDR		        ( 0x17 )
+#define MAX31343_R_PWR_MGMT_REG_ADDR		    ( 0x18 )
+#define MAX31343_R_TRICKLE_REG_ADDR		        ( 0x19 )
+#define MAX31343_R_TEMP_MSB_ADDR			    ( 0x1A )
+#define MAX31343_R_TEMP_LSB_ADDR			    ( 0x1B )
+#define MAX31343_R_TS_CONFIG_ADDR			    ( 0x1C )
+
+
+#endif /* _MAX31343_REGISTERS_H_ */
