@@ -1,10 +1,10 @@
-#include <max31328.h>
+#include <MaxEssential.h>
 
 
-Max31328 rtc(&Wire);
+MAX31328 rtc(&Wire, MAX3128_I2C_ADDRESS);
 
 // INT pin of MAX31328
-int pinINT = PIN2;
+int pinINT = 2; // PIN2
 volatile bool interrupt_occured = false;
 
 void rtc_interrupt_handler(){
@@ -18,6 +18,8 @@ void setup() {
 
   // Attach interrupt on INT pin of MAX31328.
   attachInterrupt(digitalPinToInterrupt(pinINT), rtc_interrupt_handler, FALLING);
+
+  rtc.begin();
 
   // Configure alarm to fire once per second
   max31328_alrm_t alarm = {0};
@@ -33,7 +35,7 @@ void setup() {
     Serial.println("ERROR: Cannot read control register.");
   }
   // Enable Alarm 1 Interrupt and set Interrupt Control
-  regs.control |= INTCN | A1IE;
+  regs.control |= MAX31328_F_CTRL_INTCN | MAX31328_F_CTRL_A1IE;
   regs.status = 0;
   if(rtc.set_cntl_stat_reg(regs)){
     Serial.println("ERROR: Cannot set control register.");

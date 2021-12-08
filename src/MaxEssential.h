@@ -39,6 +39,7 @@
 #include <MAX31825/MAX31825.h>
 #include <MAX31341/MAX31341.h>
 #include <MAX31343/MAX31343.h>
+#include <MAX31328/MAX31328.h>
 #include <MAX40080/MAX40080.h>
 
 #endif /* _MAX_ESSENTIAL_H_ */

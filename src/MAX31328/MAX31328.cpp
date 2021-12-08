@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (C) Maxim Integrated Products, Inc., All Rights Reserved.
+* Copyright (C) 2021 Maxim Integrated Products, Inc., All Rights Reserved.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a
 * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,8 @@
 */
 
 
-#include "max31328.h"
+#include <MAX31328/MAX31328.h>
+#include <stdarg.h>
 
 
 #define pr_err(msg) Serial.println("max31328.cpp: " msg)
@@ -54,23 +55,29 @@
 *
 * @endcode
 **************************************************************/
-Max31328::Max31328(TwoWire *i2c)
+MAX31328::MAX31328(TwoWire *i2c, uint8_t i2c_addr)
 {
   if (i2c == NULL) {
     pr_err("i2c object is invalid!");
     while (1);
   }
-  this->i2c = i2c;
+  m_i2c = i2c;
+  m_slave_addr = i2c_addr;
 
-  this->i2c->begin();
 }
 
-int Max31328::write(int address, const char *data, int length){
+void MAX31328::begin(void)
+{
+    m_i2c->begin();
+}
+
+int MAX31328::write(const char *data, int length)
+{
   int ret;
 
-  i2c->beginTransmission(address);
-  i2c->write(data,length);
-  ret = i2c->endTransmission();
+  m_i2c->beginTransmission(m_slave_addr);
+  m_i2c->write(data,length);
+  ret = m_i2c->endTransmission();
 
   if (ret != 0) {
     pr_err("i2c write failed");
@@ -79,13 +86,14 @@ int Max31328::write(int address, const char *data, int length){
   return ret;
 }
 
-int Max31328::read(int address, char *data, int length){
+int MAX31328::read(char *data, int length)
+{
   int counter = 0;
 
-  i2c->requestFrom(address, length);
+  m_i2c->requestFrom((uint8_t)m_slave_addr, (uint8_t)length);
 
-  while (i2c->available()) { // slave may send less than requested
-    data[counter++] = i2c->read(); // receive a byte as character
+  while (m_i2c->available()) { // slave may send less than requested
+    data[counter++] = m_i2c->read(); // receive a byte as character
   }
 
   if(counter == length) {
@@ -111,7 +119,7 @@ int Max31328::read(int address, char *data, int length){
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * //time = 12:00:00 AM 12hr mode
 * max31328_time_t time = {12, 0, 0, 0, 1}
@@ -121,13 +129,13 @@ int Max31328::read(int address, char *data, int length){
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::set_time(max31328_time_t time)
+uint16_t MAX31328::set_time(max31328_time_t time)
 {
     uint8_t data[] = {0,0,0,0};
     uint8_t data_length = 0;
     uint8_t max_hour = 24;
     
-    data[data_length++] = SECONDS;
+    data[data_length++] = MAX31328_R_SECONDS;
     data[data_length++] = uchar_2_bcd(time.seconds);
     data[data_length++] = uchar_2_bcd(time.minutes);
     
@@ -137,10 +145,10 @@ uint16_t Max31328::set_time(max31328_time_t time)
     {
         max_hour = max_hour/2;
         
-        data[data_length] |= MODE;
+        data[data_length] |= MAX31328_F_HOURS_F24_12;
         if(time.am_pm)
         {
-            data[data_length] |= AM_PM;
+            data[data_length] |= MAX31328_F_HOURS_AM_PM;
         }
         
     }
@@ -157,7 +165,7 @@ uint16_t Max31328::set_time(max31328_time_t time)
     }
     else
     {
-        return(write(w_adrs,(const char*) data, data_length));
+        return(write((const char*) data, data_length));
     }
 }
 
@@ -175,7 +183,7 @@ uint16_t Max31328::set_time(max31328_time_t time)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * //see datasheet for calendar format
 * max31328_calendar_t calendar = {1, 1, 1, 0}; 
@@ -185,12 +193,12 @@ uint16_t Max31328::set_time(max31328_time_t time)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::set_calendar(max31328_calendar_t calendar)
+uint16_t MAX31328::set_calendar(max31328_calendar_t calendar)
 {
     uint8_t data[] = {0,0,0,0,0};
     uint8_t data_length = 0;
     
-    data[data_length++] = DAY;
+    data[data_length++] = MAX31328_R_DAY;
     data[data_length++] = uchar_2_bcd(calendar.day);
     data[data_length++] = uchar_2_bcd(calendar.date);
     data[data_length++] = uchar_2_bcd(calendar.month);
@@ -206,7 +214,7 @@ uint16_t Max31328::set_calendar(max31328_calendar_t calendar)
     }
     else
     {
-        return(write(w_adrs,(const char*) data, data_length));
+        return(write((const char*) data, data_length));
     }
 }
 
@@ -227,7 +235,7 @@ uint16_t Max31328::set_calendar(max31328_calendar_t calendar)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * //see max31328.h for .members and datasheet for alarm format
 * max31328_alrm_t alarm; 
@@ -237,7 +245,7 @@ uint16_t Max31328::set_calendar(max31328_calendar_t calendar)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
+uint16_t MAX31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
 {
     uint8_t data[] = {0,0,0,0,0};
     uint8_t data_length = 0;
@@ -247,12 +255,12 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
     //setting alarm 1 or 2?
     if(one_r_two)
     {
-        data[data_length++] = ALRM1_SECONDS;
+        data[data_length++] = MAX31328_R_ALRM1_SECONDS;
         
         //config seconds register
         if(alarm.am1)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         data[data_length++] =  (mask_var | uchar_2_bcd(alarm.seconds));
         mask_var = 0;
@@ -260,7 +268,7 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
         //config minutes register
         if(alarm.am2)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         data[data_length++] =  (mask_var | uchar_2_bcd(alarm.minutes));
         mask_var = 0;
@@ -268,15 +276,15 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
         //config hours register
         if(alarm.am3)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         if(alarm.mode)
         {
             max_hour = max_hour/2;
-            mask_var |= MODE;
+            mask_var |= MAX31328_F_HOURS_F24_12;
             if(alarm.am_pm)
             {
-                mask_var |= AM_PM;
+                mask_var |= MAX31328_F_HOURS_AM_PM;
             }
         } 
         else
@@ -289,11 +297,11 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
         //config day/date register
         if(alarm.am4)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         if(alarm.dy_dt)
         {
-            mask_var |= DY_DT;
+            mask_var |= MAX31328_F_ALRMX_DY_DT;
             data[data_length++] =  (mask_var | uchar_2_bcd(alarm.day));
         } 
         else
@@ -304,12 +312,12 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
     }
     else
     {
-        data[data_length++] = ALRM2_MINUTES;
+        data[data_length++] = MAX31328_R_ALRM2_MINUTES;
         
         //config minutes register
         if(alarm.am2)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         data[data_length++] =  (mask_var | uchar_2_bcd(alarm.minutes));
         mask_var = 0;
@@ -317,15 +325,15 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
         //config hours register
         if(alarm.am3)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         if(alarm.mode)
         {
             max_hour = max_hour/2;
-            mask_var |= MODE;
+            mask_var |= MAX31328_F_HOURS_F24_12;
             if(alarm.am_pm)
             {
-                mask_var |= AM_PM;
+                mask_var |= MAX31328_F_HOURS_AM_PM;
             }
         } 
         else
@@ -338,11 +346,11 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
         //config day/date register
         if(alarm.am4)
         {
-           mask_var |= ALRM_MASK;
+           mask_var |= MAX31328_F_ALRMX_ALRM_MASK;
         }
         if(alarm.dy_dt)
         {
-            mask_var |= DY_DT;
+            mask_var |= MAX31328_F_ALRMX_DY_DT;
             data[data_length++] =  (mask_var | uchar_2_bcd(alarm.day));
         } 
         else
@@ -361,7 +369,7 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
     }
     else
     {
-        return(write(w_adrs,(const char*) data, data_length));
+        return(write((const char*) data, data_length));
     }
 }
 
@@ -380,7 +388,7 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15);  
+* MAX31328 rtc(D14, D15);  
 * 
 * //do not use 0xAA, see datasheet for appropriate data 
 * max31328_cntl_stat_t data = {0xAA, 0xAA}; 
@@ -389,17 +397,17 @@ uint16_t Max31328::set_alarm(max31328_alrm_t alarm, bool one_r_two)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::set_cntl_stat_reg(max31328_cntl_stat_t data)
+uint16_t MAX31328::set_cntl_stat_reg(max31328_cntl_stat_t data)
 {
     uint8_t local_data[] = {0,0,0};
     uint8_t data_length = 0;
     
-    local_data[data_length++] = CONTROL;
+    local_data[data_length++] = MAX31328_R_CONTROL;
     local_data[data_length++] = data.control;
     local_data[data_length++] = data.status;
 
     //users responsibility to make sure data is logical
-    return(write(w_adrs,(const char*) local_data, data_length));
+    return(write((const char*) local_data, data_length));
 }
 
 
@@ -418,7 +426,7 @@ uint16_t Max31328::set_cntl_stat_reg(max31328_cntl_stat_t data)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * //time = 12:00:00 AM 12hr mode
 * max31328_time_t time = {12, 0, 0, 0, 1} 
@@ -428,22 +436,22 @@ uint16_t Max31328::set_cntl_stat_reg(max31328_cntl_stat_t data)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::get_time(max31328_time_t* time)
+uint16_t MAX31328::get_time(max31328_time_t* time)
 {
     uint16_t rtn_val = 1;
     uint8_t data[3];
     
-    data[0] = SECONDS;
-    rtn_val = write(w_adrs, (const char*) data, 1);
+    data[0] = MAX31328_R_SECONDS;
+    rtn_val = write((const char*) data, 1);
     
     if(!rtn_val)
     {
-        rtn_val = read(r_adrs,(char *) data, 3);
+        rtn_val = read((char *) data, 3);
         
         time->seconds = bcd_2_uchar(data[0]);
         time->minutes = bcd_2_uchar(data[1]);
-        time->am_pm = (data[2]&AM_PM);
-        time->mode = (data[2]&MODE);
+        time->am_pm = (data[2] & MAX31328_F_HOURS_AM_PM);
+        time->mode = (data[2] & MAX31328_F_HOURS_F24_12);
         
         if(time->mode)
         {
@@ -475,7 +483,7 @@ uint16_t Max31328::get_time(max31328_time_t* time)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * //see datasheet for calendar format
 * max31328_calendar_t calendar = {1, 1, 1, 0}; 
@@ -485,17 +493,17 @@ uint16_t Max31328::get_time(max31328_time_t* time)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::get_calendar(max31328_calendar_t* calendar)
+uint16_t MAX31328::get_calendar(max31328_calendar_t* calendar)
 {
     uint16_t rtn_val = 1;
     uint8_t data[4];
     
-    data[0] = DAY;
-    rtn_val = write(w_adrs, (const char*) data, 1);
+    data[0] = MAX31328_R_DAY;
+    rtn_val = write((const char*) data, 1);
     
     if(!rtn_val)
     {
-        rtn_val = read(r_adrs,(char *) data, 4);
+        rtn_val = read((char *) data, 4);
         
         calendar->day = bcd_2_uchar(data[0]);
         calendar->date = bcd_2_uchar(data[1]);
@@ -525,7 +533,7 @@ uint16_t Max31328::get_calendar(max31328_calendar_t* calendar)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * //see max31328.h for .members and datasheet for alarm format
 * max31328_alrm_t alarm; 
@@ -535,27 +543,27 @@ uint16_t Max31328::get_calendar(max31328_calendar_t* calendar)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
+uint16_t MAX31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
 {
     uint16_t rtn_val = 1;
     uint8_t data[4];
     
     if(one_r_two)
     {
-        data[0] = ALRM1_SECONDS;
-        rtn_val = write(w_adrs, (const char*) data, 1);
+        data[0] = MAX31328_R_ALRM1_SECONDS;
+        rtn_val = write((const char*) data, 1);
         
         if(!rtn_val)
         {
-            rtn_val = read(r_adrs,(char *) data, 4);
+            rtn_val = read((char *) data, 4);
             
             alarm->seconds = bcd_2_uchar(data[0]&0x7F);
-            alarm->am1 = (data[0]&ALRM_MASK);
+            alarm->am1 = (data[0] & MAX31328_F_ALRMX_ALRM_MASK);
             alarm->minutes = bcd_2_uchar(data[1]&0x7F);
-            alarm->am2 = (data[1]&ALRM_MASK);
-            alarm->am3 = (data[2]&ALRM_MASK);
-            alarm->am_pm = (data[2]&AM_PM);
-            alarm->mode = (data[2]&MODE);
+            alarm->am2 = (data[1] & MAX31328_F_ALRMX_ALRM_MASK);
+            alarm->am3 = (data[2] & MAX31328_F_ALRMX_ALRM_MASK);
+            alarm->am_pm = (data[2] & MAX31328_F_HOURS_AM_PM);
+            alarm->mode = (data[2] & MAX31328_F_HOURS_F24_12);
             
             if(alarm->mode)
             {
@@ -566,7 +574,7 @@ uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
                 alarm->hours = bcd_2_uchar((data[2]&0x3F));
             }  
             
-            if(data[3] & DY_DT)
+            if(data[3] & MAX31328_F_ALRMX_DY_DT)
             {
                 alarm->dy_dt = 1;
                 alarm->day = bcd_2_uchar(data[3]&0x0F);
@@ -575,23 +583,23 @@ uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
             {
                 alarm->date = bcd_2_uchar(data[3]&0x3F);
             }
-            alarm->am4 = (data[3]&ALRM_MASK);
+            alarm->am4 = (data[3] & MAX31328_F_ALRMX_ALRM_MASK);
         } 
     }
     else
     {
-        data[0] = ALRM2_MINUTES;
-        rtn_val = write(w_adrs, (const char*) data, 1);
+        data[0] = MAX31328_R_ALRM2_MINUTES;
+        rtn_val = write((const char*) data, 1);
         
         if(!rtn_val)
         {
-            rtn_val = read(r_adrs,(char *) data, 4);
+            rtn_val = read((char *) data, 4);
             
             alarm->minutes = bcd_2_uchar(data[0]&0x7F);
-            alarm->am2 = (data[0]&ALRM_MASK);
-            alarm->am3 = (data[1]&ALRM_MASK);
-            alarm->am_pm = (data[1]&AM_PM);
-            alarm->mode = (data[1]&MODE);
+            alarm->am2 = (data[0] & MAX31328_F_ALRMX_ALRM_MASK);
+            alarm->am3 = (data[1] & MAX31328_F_ALRMX_ALRM_MASK);
+            alarm->am_pm = (data[1] & MAX31328_F_HOURS_AM_PM);
+            alarm->mode = (data[1] & MAX31328_F_HOURS_F24_12);
             
             if(alarm->mode)
             {
@@ -602,7 +610,7 @@ uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
                 alarm->hours = bcd_2_uchar((data[2]&0x3F));
             }  
             
-            if(data[2] & DY_DT)
+            if(data[2] & MAX31328_F_ALRMX_DY_DT)
             {
                 alarm->dy_dt = 1;
                 alarm->day = bcd_2_uchar(data[2]&0x0F);
@@ -611,7 +619,7 @@ uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
             {
                 alarm->date = bcd_2_uchar(data[2]&0x3F);
             }
-            alarm->am4 = (data[2]&ALRM_MASK);
+            alarm->am4 = (data[2] & MAX31328_F_ALRMX_ALRM_MASK);
         } 
     }
     
@@ -635,7 +643,7 @@ uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15);  
+* MAX31328 rtc(D14, D15);  
 * 
 * //do not use 0xAA, see datasheet for appropriate data 
 * max31328_cntl_stat_t data = {0xAA, 0xAA}; 
@@ -644,17 +652,17 @@ uint16_t Max31328::get_alarm(max31328_alrm_t* alarm, bool one_r_two)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::get_cntl_stat_reg(max31328_cntl_stat_t* data)
+uint16_t MAX31328::get_cntl_stat_reg(max31328_cntl_stat_t* data)
 {
     uint16_t rtn_val = 1;
     uint8_t local_data[2];
     
-    local_data[0] = CONTROL;
-    rtn_val = write(w_adrs, (const char*) local_data, 1);
+    local_data[0] = MAX31328_R_CONTROL;
+    rtn_val = write((const char*) local_data, 1);
     
     if(!rtn_val)
     {
-        rtn_val = read(r_adrs,(char *) local_data, 2);
+        rtn_val = read((char *) local_data, 2);
         
         data->control = local_data[0];
         data->status = local_data[1];
@@ -676,7 +684,7 @@ uint16_t Max31328::get_cntl_stat_reg(max31328_cntl_stat_t* data)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * uint16_t temp; 
 *
@@ -684,17 +692,17 @@ uint16_t Max31328::get_cntl_stat_reg(max31328_cntl_stat_t* data)
 *
 * @endcode
 **************************************************************/
-uint16_t Max31328::get_temperature(void)
+uint16_t MAX31328::get_temperature(void)
 {
     uint16_t rtn_val = 1;
     uint8_t data[2];
     
-    data[0] = MSB_TEMP;
-    rtn_val = write(w_adrs, (const char*) data, 1);
+    data[0] = MAX31328_R_MSB_TEMP;
+    rtn_val = write((const char*) data, 1);
     
     if(!rtn_val)
     {
-        read(r_adrs,(char *) data, 2);
+        read((char *) data, 2);
         
         rtn_val = data[0] << 8;
         rtn_val |= data[1];
@@ -718,7 +726,7 @@ uint16_t Max31328::get_temperature(void)
 * @code
 * 
 * //instantiate rtc object
-* Max31328 rtc(D14, D15); 
+* MAX31328 rtc(D14, D15); 
 * 
 * time_t epoch_time; 
 *
@@ -726,7 +734,7 @@ uint16_t Max31328::get_temperature(void)
 *
 * @endcode
 **************************************************************/
-time_t Max31328::get_epoch(void)
+time_t MAX31328::get_epoch(void)
 {
     //system vars
     struct tm sys_time;
@@ -781,7 +789,7 @@ time_t Max31328::get_epoch(void)
 *     @return bcd_result = BCD representation of data
 *
 **************************************************************/
-uint16_t Max31328::uchar_2_bcd(uint8_t data)
+uint16_t MAX31328::uchar_2_bcd(uint8_t data)
 {
    uint16_t bcd_result = 0;
    
@@ -810,7 +818,7 @@ uint16_t Max31328::uchar_2_bcd(uint8_t data)
 *     @return rtn_val = integer rep. of BCD
 *
 **************************************************************/
-uint8_t Max31328::bcd_2_uchar(uint8_t bcd)
+uint8_t MAX31328::bcd_2_uchar(uint8_t bcd)
 {
     uint8_t rtn_val = 0;
 
@@ -819,5 +827,3 @@ uint8_t Max31328::bcd_2_uchar(uint8_t bcd)
 
     return rtn_val;
 }
-
-

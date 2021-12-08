@@ -1,10 +1,12 @@
-#include <max31328.h>
+#include <MaxEssential.h>
 
 
-Max31328 rtc(&Wire);
+MAX31328 rtc(&Wire, MAX3128_I2C_ADDRESS);
 
 void setup() {
   Serial.begin(115200);
+  
+  rtc.begin();
 }
 
 void print_current_date_time(){
