@@ -1,4 +1,4 @@
-#include <MaxEssential.h>
+#include <MaxEssentialToolkit.h>
 
 // I2C Addr depend on the R_SEL resistor
 MAX31827 temp_sensor(&Wire, MAX31827_I2C_ADDR_FOR_640_0_KOHM);

@@ -5,7 +5,7 @@
  *
  */
 
-#include <MaxEssential.h>
+#include <MaxEssentialToolkit.h>
 
 
 MAX31343 rtc = MAX31343(&Wire, MAX31343_I2C_ADDRESS);

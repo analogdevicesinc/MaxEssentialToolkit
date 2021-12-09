@@ -8,7 +8,7 @@
  * 
  */
 
-#include <MaxEssential.h>
+#include <MaxEssentialToolkit.h>
 
 MAX31343 rtc = MAX31343(&Wire, MAX31343_I2C_ADDRESS);
 uint8_t pin_interrupt = 2;// interrupt pins that connects to MAX31343

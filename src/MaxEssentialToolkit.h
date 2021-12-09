@@ -31,15 +31,16 @@
 *******************************************************************************
 */
 
-#ifndef _MAX_ESSENTIAL_H_
-#define _MAX_ESSENTIAL_H_
+#ifndef _MAX_ESSENTIAL_TOOLKIT_H_
+#define _MAX_ESSENTIAL_TOOLKIT_H_
 
-#include <MAX31889/MAX31889.h>
-#include <MAX31827/MAX31827.h>
-#include <MAX31825/MAX31825.h>
+
+#include <MAX31328/MAX31328.h>
 #include <MAX31341/MAX31341.h>
 #include <MAX31343/MAX31343.h>
-#include <MAX31328/MAX31328.h>
+#include <MAX31825/MAX31825.h>
+#include <MAX31827/MAX31827.h>
+#include <MAX31889/MAX31889.h>
 #include <MAX40080/MAX40080.h>
 
-#endif /* _MAX_ESSENTIAL_H_ */
+#endif /* _MAX_ESSENTIAL_TOOLKIT_H_ */

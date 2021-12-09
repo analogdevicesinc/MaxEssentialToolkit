@@ -1,4 +1,4 @@
-#include <MaxEssential.h>
+#include <MaxEssentialToolkit.h>
 
 MAX40080 sensor(&Wire, MAX40080_DEFAULT_I2C_ADDR_FOR_100_KOHM, 0.05);
 
