@@ -86,33 +86,13 @@ typedef struct {
 class MAX31328
 {
     public:
-        /**********************************************************//**
-        * Constructor for Max31328 Class
-        *
-        * On Entry:
-        *     @param[in] i2c Pointer to I2C bus object for this device.
-        *
-        * On Exit:
-        *    @return none
-        *
-        * Example:
-        * @code
-        * 
-        * //instantiate rtc object
-        * MAX31328 rtc(&Wire); 
-        *
-        * @endcode
-        **************************************************************/
         MAX31328(TwoWire *i2c, uint8_t i2c_addr=MAX3128_I2C_ADDRESS);
         
-        /*
-         *
-         */
         void begin(void);
         
         /**********************************************************//**
         * Sets the time on MAX31328
-        * Struct data is in integrer format, not BCD.  Fx will convert
+        * Struct data is in integer format, not BCD.  Fx will convert
         * to BCD for you.
         *
         * On Entry:
@@ -389,7 +369,7 @@ class MAX31328
         uint16_t uchar_2_bcd(uint8_t data);
         uint8_t bcd_2_uchar(uint8_t bcd);
 
-        int write(const char *data, int length);
-        int read(char *buffer, int length);
+        int read_register(uint8_t reg, uint8_t *buf, uint8_t len=1);
+        int write_register(uint8_t reg, const uint8_t *buf, uint8_t len=1);
 };
 #endif /* _MAX31328_H_ */
