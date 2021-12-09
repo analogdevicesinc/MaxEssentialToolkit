@@ -36,7 +36,7 @@
 
 #include <MAX31341/MAX31341_regs.h>
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <Wire.h>
 #include <time.h>
 

@@ -1,11 +1,11 @@
 #include <MaxEssential.h>
 
 
-MAX31889 temp_sensor(&Wire);
+MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
 MAX31889::status_t sensor_status;
 // Pin 46 is P5.6 (for MAX32630FTHR Board)
 // More detail here: https://os.mbed.com/platforms/MAX32630FTHR/
-int pinTrigger = 46; // Connects to GPIO1 pin of MAX31889
+int pin_trigger = 46; // Connects to GPIO1 pin of MAX31889
 
 void print_sensor_info()  {
     int ret;
@@ -27,9 +27,9 @@ void print_sensor_info()  {
 }
 
 void trigger_meas(void)  {
-    digitalWrite(pinTrigger, LOW);
+    digitalWrite(pin_trigger, LOW);
     delay(1); // 1ms
-    digitalWrite(pinTrigger, HIGH);
+    digitalWrite(pin_trigger, HIGH);
 }
 
 void setup()  {
@@ -46,13 +46,14 @@ void setup()  {
     temp_sensor.begin();
     print_sensor_info();
 
-    ret = temp_sensor.config_gpio(MAX31889::GPIO_NUM_1, MAX31889::GPIO_MODE_3);// Configure GPIO1 as CONVERT Trigger
+    // Configure GPIO1 as CONVERT Trigger
+    ret = temp_sensor.config_gpio(MAX31889::GPIO_NUM_1, MAX31889::GPIO_MODE_3);
     if (ret) {
         Serial.println("GPIO1 configuration failed!");
     }
     //
-    pinMode(pinTrigger, OUTPUT);
-    digitalWrite(pinTrigger, HIGH);
+    pinMode(pin_trigger, OUTPUT);
+    digitalWrite(pin_trigger, HIGH);
     
     Serial.println("---------------------");
     Serial.println("Measurement Started");

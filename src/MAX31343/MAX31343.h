@@ -38,7 +38,7 @@
 
 #include <time.h>
 #include <Wire.h>
-#include "Arduino.h"
+#include <Arduino.h>
 
 
 /**
@@ -174,14 +174,11 @@ public:
         TTS_INTERNAL_128SEC,
     } ttsint_t;
 
-	/**
-	* @brief	Base class constructor.
-	*
-	* @param[in]	i2c Pointer to I2C bus object for this device.
-	* @param[in]	7 bit i2c addr
-	*/
+	
 	MAX31343(TwoWire *i2c, uint8_t i2c_addr);
 
+	void begin(void);
+	
 	/**
 	* @brief		Read from a register.
 	*
@@ -467,11 +464,6 @@ public:
 	*/
 	int rtc_stop();
 
-	/**
-	* @brief	Base class destructor.
-	*/
-	~MAX31343();
-
 protected:
 	typedef struct {
 		union {
@@ -722,18 +714,8 @@ protected:
     } ts_config_t;
 
 private:
-	/* PRIVATE TYPE DECLARATIONS */
-
-	/* PRIVATE VARIABLE DECLARATIONS */
 	TwoWire *i2c_handler;
 	uint8_t m_slave_addr;
-
-	enum config_reg2_set_rtc {
-		CONFIG_REG2_SET_RTC_RTCRUN = 0,	/**< Setting this bit to zero doesn't allow to write into the RTC */
-		CONFIG_REG2_SET_RTC_RTCPRGM,	/**< This bit must be set to one, before writing into the RTC. i.e to set the initial time for the RTC this bit must be high. */
-	};
-
-	/* PRIVATE FUNCTION DECLARATIONS */
 
 	int rtc_regs_to_time(struct tm *time, const rtc_time_regs_t *regs);
 

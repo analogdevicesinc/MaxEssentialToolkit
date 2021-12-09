@@ -1,6 +1,6 @@
 #include <MaxEssential.h>
 
-MAX31341 max3134x(&Wire, MAX31341_I2C_ADDRESS);
+MAX31341 rtc(&Wire, MAX31341_I2C_ADDRESS);
 
 char time_char_buffer[40];
 struct tm rtc_ctime;
@@ -14,7 +14,7 @@ void setup() {
     Serial.println("RTC will be set to specific value then it will be read every second");
     Serial.println(" ");
 
-    max3134x.begin();
+    rtc.begin();
         
     rtc_ctime.tm_year = 121; // years since 1900
     rtc_ctime.tm_mon  = 10;  // 0-11
@@ -27,7 +27,7 @@ void setup() {
     rtc_ctime.tm_wday  = 0;  // 0-6
     rtc_ctime.tm_isdst = 0;  // Daylight saving flag
     
-    ret = max3134x.set_time(&rtc_ctime);
+    ret = rtc.set_time(&rtc_ctime);
     if (ret) {
         Serial.println("Set time failed!");
     }
@@ -38,7 +38,7 @@ void loop()  {
 
     delay(1000); // wait a little
 
-    ret = max3134x.get_time(&rtc_ctime);
+    ret = rtc.get_time(&rtc_ctime);
     if (ret) {
         Serial.println("get_time failed!");
     } else {

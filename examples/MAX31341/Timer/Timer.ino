@@ -1,6 +1,6 @@
 #include <MaxEssential.h>
 
-MAX31341 max3134x(&Wire, MAX31341_I2C_ADDRESS);
+MAX31341 rtc(&Wire, MAX31341_I2C_ADDRESS);
 
 void setup() {
     int ret;
@@ -11,18 +11,18 @@ void setup() {
     Serial.println("MAX31341 timer feature will be configured and timer count value will be display");
     Serial.println(" ");
 
-    max3134x.begin();
+    rtc.begin();
         
     bool repeat = true;
     MAX31341::timer_freq_t freq = MAX31341::TIMER_FREQ_16HZ;
     uint8_t value = 0xFF;
 
-    ret = max3134x.timer_init(value, repeat, freq);
+    ret = rtc.timer_init(value, repeat, freq);
     if (ret) {
         Serial.println("Timer init failed!");
     }
 
-    ret = max3134x.timer_start();
+    ret = rtc.timer_start();
     if (ret) {
         Serial.println("Timer start failed!");
     }
@@ -32,7 +32,7 @@ void loop()  {
 
     delay(10); // wait a little
 
-    uint8_t counter = max3134x.timer_get();
+    uint8_t counter = rtc.timer_get();
     Serial.print("TMR Conter: ");
     Serial.println(counter, HEX);
 }

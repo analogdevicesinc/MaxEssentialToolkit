@@ -34,6 +34,8 @@
 #include <MAX40080/MAX40080.h>
 
 
+#define MAX40080_VOLTAGE_STEP_PER_BIT (MAX40080_FULL_RANGE_VOLTAGE/4095.0f) // 12bit ADC count (4095)
+
 #define GET_BIT_VAL(val, pos, mask)     ( ( (val) & mask) >> pos )
 #define SET_BIT_VAL(val, pos, mask)     ( ( ((int)val) << pos) & mask )
 
@@ -338,7 +340,7 @@ int MAX40080::clear_interrupt_flag(intr_id_t interrupt)
     return ret;
 }
 
-int MAX40080::clear_interrupts(void)
+int MAX40080::clear_interrupt_flags(void)
 {
     int ret;
     uint8_t buf[2];
@@ -351,7 +353,6 @@ int MAX40080::clear_interrupts(void)
 
     return ret;
 }
-
 
 int MAX40080::get_configuration(reg_cfg_t &cfg)
 {
@@ -475,6 +476,7 @@ int MAX40080::get_current(float &current)
     }
     val16  = (buf[1]<<8) | buf[0];
     
+    // 16th bit indicated data valid or not
     if (val16 & (1<<15)) { // is valid
         current = convert_count_2_current( val16 );
     } else {
@@ -496,6 +498,7 @@ int MAX40080::get_voltage(float &voltage)
     }
     val16  = (buf[1]<<8) | buf[0];
 
+    // 16th bit indicated data valid or not
     if (val16 & (1<<15)) { // is valid
         voltage = convert_count_2_voltage(val16, 12);// 12 bit ADC
     } else {
@@ -517,7 +520,8 @@ int MAX40080::get_current_and_voltage(float &current, float &voltage)
     }
     val32  = (buf[3]<<24) | (buf[2]<<16) | (buf[1]<<8) | buf[0];
     
-    if (val32 & 1<<31) { // is valid
+    // 32th bit indicated data valid or not
+    if (val32 & (1<<31) ) { // is valid
         // 12 bits, Voltage allways positive
         voltage = convert_count_2_voltage( (uint16_t)(val32>>16), 12);// 12 bit ADC
 

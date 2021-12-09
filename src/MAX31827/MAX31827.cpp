@@ -109,13 +109,17 @@ int MAX31827::read_register(uint8_t reg, uint16_t &val)
         // CHECK CRC if PEC enabled
         if (m_pec_status) {
             uint8_t crc = 0;
-            crc = calc_crc8(crc, &m_slave_addr, 1);
+            uint8_t addr = m_slave_addr<<1;
+
+            crc = calc_crc8(crc, &addr, 1);
             crc = calc_crc8(crc, &reg, 1);
+            addr += 1; // read
+            crc = calc_crc8(crc, &addr, 1);
             crc = calc_crc8(crc, buf,  2);
             
-            if (crc != buf[2]) {
+            if (crc != buf[r_Len-1]) {
                 // CRC deos not match with PEC byte
-                //return -2;
+                return MAX31827_ERR_CRC_MISMATCH;
             }
         }
 
@@ -143,8 +147,9 @@ int MAX31827::write_register(uint8_t reg, uint16_t val)
 
     if (m_pec_status) {
         uint8_t crc = 0;
+        uint8_t addr = m_slave_addr<<1;
 
-        crc = calc_crc8(crc, &m_slave_addr, 1);
+        crc = calc_crc8(crc, &addr, 1);
         crc = calc_crc8(crc, &reg, 1);
         crc = calc_crc8(crc, buf,  2);
         
@@ -177,9 +182,9 @@ MAX31827::MAX31827(TwoWire *i2c, uint8_t i2c_addr)
         }
     }
     
+    m_i2c = i2c;
     m_slave_addr = i2c_addr;
     m_pec_status = false;
-    m_i2c = i2c;
 }
 
 void MAX31827::begin(void)
@@ -215,9 +220,6 @@ int MAX31827::set_alarm(float temp_low, float temp_high)
     }
 
     ret = set_temp(temp_high, MAX31827_R_TH);
-    if (ret) {
-        return -1;
-    }
 
     return ret;
 }
@@ -232,9 +234,6 @@ int MAX31827::get_alarm(float &temp_low, float &temp_high)
     }
 
     ret = get_temp(temp_high, MAX31827_R_TH);
-    if (ret) {
-        return -1;
-    }
 
     return ret;
 }
@@ -249,9 +248,6 @@ int MAX31827::set_alarm_hyst(float tl_hyst, float th_hyst)
     }
 
     ret = set_temp(th_hyst, MAX31827_R_TH_HYST);
-    if (ret) {
-        return -1;
-    }
 
     return ret;
 }
@@ -266,9 +262,6 @@ int MAX31827::get_alarm_hyst(float &tl_hyst, float &th_hyst)
     }
 
     ret = get_temp(th_hyst, MAX31827_R_TH_HYST);
-    if (ret) {
-        return -1;
-    }
 
     return ret;
 }
@@ -290,7 +283,6 @@ int MAX31827::set_pec_status(bool enable)
     }
     
     ret = write_register(MAX31827_R_CFG, cfg);
-
     if (ret == 0) {
         m_pec_status = enable;
     }
@@ -391,7 +383,7 @@ int MAX31827::set_fault_number(fault_t fault)
     uint16_t val = (uint16_t)fault;
 
     // mask other bits
-    val &= (MAX31827_F_CFG_FAULT_QUE);
+    val &= MAX31827_F_CFG_FAULT_QUE;
 
     ret = read_register(MAX31827_R_CFG, cfg);
     if (ret) {
@@ -411,7 +403,7 @@ int MAX31827::start_meas(conv_period_t period)
     uint16_t val = (uint16_t)period;
 
     // mask other bits
-    val &= (MAX31827_F_CFG_CONV_RATE);
+    val &= MAX31827_F_CFG_CONV_RATE;
 
     ret = read_register(MAX31827_R_CFG, cfg);
     if (ret) {
@@ -441,7 +433,7 @@ int MAX31827::get_temp(float &temp, uint8_t reg)
         return -1;
     }
 
-    // convert count to temperature
+    // convert count to temperature, 16th bit is sign bit
     if (count & (1<<15) ) {
         count = (count ^ 0xFFFF) + 1;
         temp  = count * TEMP_RESOLUTION_FOR_12_BIT;

@@ -37,7 +37,7 @@
 
 #include <MAX31889/MAX31889_registers.h>
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <Wire.h>
 
 
@@ -46,7 +46,7 @@
 
 /*
  *
- * MAX31889 Temperature Sensor Class
+ * MAX31889 Temperature Sensor
  * 
  */
 class MAX31889
@@ -60,16 +60,17 @@ class MAX31889
         } status_t;
 
         typedef enum {
-            GPIO_NUM_0 = 0,
-            GPIO_NUM_1,
+            GPIO_NUM_0 = 0, // GPIO0
+            GPIO_NUM_1,     // GPIO1
             GPIO_NUM_MAX
         } gpio_t;
 
         typedef enum {
-            GPIO_MODE_0 = 0,
-            GPIO_MODE_1,
-            GPIO_MODE_2,
-            GPIO_MODE_3,
+            GPIO_MODE_0 = 0,  // Digital input (HiZ)
+            GPIO_MODE_1,      // Digital output (open-drain).
+            GPIO_MODE_2,      // Digital Input with 1M Ohm pulldown.
+            GPIO_MODE_3,      // if GPIO1: Convert Temperature Input (active low)
+                              // if GPII0: INTB (open-drain, active low) 
             GPIO_MODE_MAX
         } gpio_mode_t;
 
@@ -102,15 +103,15 @@ class MAX31889
         int set_interrupt(int_mode_t interrupt, bool is_enable);
         // gpio functions
         int config_gpio(gpio_t gpio, gpio_mode_t mode);
-        int get_gpio_state(gpio_t gpio);
-        int set_gpio_state(gpio_t gpio, int state);
+        int get_gpio_state(gpio_t gpio); // get 1 or 0
+        int set_gpio_state(gpio_t gpio, int state);// state 1 or 0
         //
         int get_alarm_temp(float &temp_low, float &temp_high);
         int set_alarm_temp(float temp_low=-40.0, float temp_high=125.0);
 
         int start_meas(void);
         int get_num_of_sample(void);
-        int read_samples(float *temp, int num_of_samples);
+        int read_samples(float *temp, int num_of_samples=1);
         
         // fifo functions
         int flush_fifo();
@@ -121,12 +122,13 @@ class MAX31889
         // generic functions
         int reset_registers(void);
 
-    private:
-        uint8_t m_slave_addr;
-        TwoWire *m_i2c;
-
+        // Register access function
         int read_register(uint8_t reg, uint8_t *data, int len=1);
         int write_register(uint8_t reg, const uint8_t *data, int len=1);
+
+    private:
+        TwoWire *m_i2c;
+        uint8_t  m_slave_addr;
 
         float    convert_count_2_temp(uint16_t count);
         uint16_t convert_temp_2_count(float temp);   

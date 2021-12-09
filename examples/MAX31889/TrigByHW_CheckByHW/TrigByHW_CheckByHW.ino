@@ -1,7 +1,7 @@
 #include <MaxEssential.h>
 
 
-MAX31889 temp_sensor(&Wire);
+MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
 // Pin 43 is P5.3 
 // Pin 46 is P5.6 
 // (MAX32630FTHR Board): https://os.mbed.com/platforms/MAX32630FTHR/

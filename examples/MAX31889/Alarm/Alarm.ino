@@ -3,7 +3,7 @@
 #define ALARM_LOW    (29.0f)  // Update here depend on your environment conditions
 #define ALARM_HIGH   (32.0f)  // Update here depend on your environment conditions
 
-MAX31889 temp_sensor(&Wire);
+MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
 MAX31889::status_t sensor_status;
 
 void print_sensor_info()  {

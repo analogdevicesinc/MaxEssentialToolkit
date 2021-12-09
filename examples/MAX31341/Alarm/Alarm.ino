@@ -1,14 +1,17 @@
 #include <MaxEssential.h>
 
-MAX31341 max3134x(&Wire, MAX31341_I2C_ADDRESS);
-int inta_pin = 3;
+MAX31341 rtc(&Wire, MAX31341_I2C_ADDRESS);
+
+// Pin Number that connects to MAX31341 INTA pin
+// Please update pin_inta depend on your target board connection
+int pin_inta = 3;
 
 char time_char_buffer[40];
 struct tm rtc_ctime;
 
 void alarm1_irq_handler(void) {
   
-    max3134x.get_time(&rtc_ctime);
+    rtc.get_time(&rtc_ctime);
 
     strftime(time_char_buffer, sizeof(time_char_buffer), "%Y-%m-%d %H:%M:%S", &rtc_ctime);
     Serial.println(time_char_buffer);
@@ -19,7 +22,7 @@ void clear_irq_flag(void) {
     uint8_t reg;
     
     // reading status register will clear flags
-    ret = max3134x.read_register(MAX31341_REG_INT_STATUS, &reg);
+    ret = rtc.read_register(MAX31341_REG_INT_STATUS, &reg);
      if (ret) {
         Serial.println("Read Status failed!");
     }
@@ -34,7 +37,7 @@ void setup() {
     Serial.println("MAX31341 will be configured to generate periodic alarm");
     Serial.println(" ");
 
-    max3134x.begin();
+    rtc.begin();
     
     rtc_ctime.tm_year = 121; // years since 1900
     rtc_ctime.tm_mon  = 10;  // 0-11
@@ -47,25 +50,25 @@ void setup() {
     rtc_ctime.tm_wday  = 0;  // 0-6
     rtc_ctime.tm_isdst = 0;  // Daylight saving flag
     
-    ret = max3134x.set_time(&rtc_ctime);
+    ret = rtc.set_time(&rtc_ctime);
     if (ret) {
         Serial.println("Set time failed!");
     }
 
     // Set alarm pin as input
-    pinMode(inta_pin, INPUT);
+    pinMode(pin_inta, INPUT);
 
-    ret = max3134x.configure_inta_clkin_pin(MAX31341::CONFIGURE_PIN_AS_INTA);
+    ret = rtc.configure_inta_clkin_pin(MAX31341::CONFIGURE_PIN_AS_INTA);
     if (ret) {
         Serial.println("Configure inta failed!");
     }
 
-    ret = max3134x.set_alarm(MAX31341::ALARM1, &rtc_ctime, MAX31341::ALARM_PERIOD_EVERYSECOND);
+    ret = rtc.set_alarm(MAX31341::ALARM1, &rtc_ctime, MAX31341::ALARM_PERIOD_EVERYSECOND);
     if (ret) {
         Serial.println("Set alarm failed!");
     }
 
-    ret = max3134x.irq_enable(MAX31341::INTR_ID_ALARM1);
+    ret = rtc.irq_enable(MAX31341::INTR_ID_ALARM1);
     if (ret) {
         Serial.println("IRQ enable failed!");
     }
@@ -77,7 +80,7 @@ void loop()  {
 
     //Serial.println("Tick");
 
-    int pin_state = digitalRead(inta_pin);
+    int pin_state = digitalRead(pin_inta);
     
     if (pin_state == LOW) {
         alarm1_irq_handler();

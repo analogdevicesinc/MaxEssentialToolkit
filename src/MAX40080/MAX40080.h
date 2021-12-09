@@ -37,11 +37,11 @@
 
 #include <MAX40080/MAX40080_registers.h>
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <Wire.h>
 
-#define MAX40080_FULL_RANGE_VOLTAGE (37.5f) // full Range 37.5V
-#define MAX40080_VOLTAGE_STEP_PER_BIT (MAX40080_FULL_RANGE_VOLTAGE/4095.0f) // 12bit ADC count (4095)
+#define MAX40080_FULL_RANGE_VOLTAGE     (37.5f) // full Range 37.5V
+
 
 #define MAX40080_ERR_UNKNOWN            (-1)
 #define MAX40080_ERR_CRC_MISMATCH       (-2)
@@ -153,8 +153,8 @@ class MAX40080 {
         int get_status(reg_status_t &stat);
         int flush_fifo(void);
         int set_interrupt_status(intr_id_t interrupt, bool status);
-        int clear_interrupts(void);
         int clear_interrupt_flag(intr_id_t interrupt);
+        int clear_interrupt_flags(void);
 
         int get_configuration(reg_cfg_t &cfg);
         int set_configuration(reg_cfg_t  cfg);
@@ -178,14 +178,15 @@ class MAX40080 {
 
         int send_quick_command(void);
         
-    private:
-        TwoWire *m_i2c;
-        uint8_t m_slave_addr;
-        reg_cfg_t m_reg_cfg;
-        float m_shuntResistor;
-        
+        // Register direct access function
         int write_register(uint8_t reg, const uint8_t *buf, uint8_t len=1);
         int read_register(uint8_t reg, uint8_t *buf, uint8_t len=1);
+        
+    private:
+        TwoWire  *m_i2c;
+        uint8_t   m_slave_addr;
+        reg_cfg_t m_reg_cfg;
+        float     m_shuntResistor;
         
         uint16_t convert_voltage_2_count(float voltage, int resolution);
         float convert_count_2_voltage(uint16_t count, int resolution);

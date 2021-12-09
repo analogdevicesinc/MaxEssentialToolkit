@@ -89,7 +89,10 @@ MAX31343::MAX31343(TwoWire *i2c, uint8_t i2c_addr)
 	}
 	i2c_handler = i2c;
 	m_slave_addr = i2c_addr;
+}
 
+void MAX31343::begin(void)
+{
 	i2c_handler->begin();
 
 	sw_reset_release();
@@ -97,11 +100,6 @@ MAX31343::MAX31343(TwoWire *i2c, uint8_t i2c_addr)
 	rtc_start();
 
 	irq_disable_all();
-}
-
-MAX31343::~MAX31343()
-{
-
 }
 
 int MAX31343::read_register(uint8_t reg, uint8_t *value, uint8_t len)

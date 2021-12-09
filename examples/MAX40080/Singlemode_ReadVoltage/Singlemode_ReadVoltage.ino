@@ -19,15 +19,15 @@ void setup() {
     sensor.begin();
 
 #if defined(ARDUINO_MAXIM)
-  /*
-   *  Default Wire is #1 for MAX32630FTHR board
-   *  If you change Wire number (while creating MAX40080 instance)
-   *  you need to update below pins too, to match them with new Wire number
-   */
-  #if defined(MAX32630)
-    useVDDIO(PIN_WIRE1_SDA); // To MAX32630FTHR board drive SDA line with 1.8V
-    useVDDIO(PIN_WIRE1_SCL); // To MAX32630FTHR board drive SCL line with 1.8V
-  #endif
+    /*
+    *  Default Wire is #1 for MAX32630FTHR board
+    *  If you change Wire number (while creating MAX40080 instance)
+    *  you need to update below pins too, to match them with new Wire number
+    */
+    #if defined(MAX32630)
+        useVDDIO(PIN_WIRE1_SDA); // To MAX32630FTHR board drive SDA line with 1.8V
+        useVDDIO(PIN_WIRE1_SCL); // To MAX32630FTHR board drive SCL line with 1.8V
+    #endif
 #endif
 
     /*
@@ -71,21 +71,21 @@ void loop()  {
     
     ret = sensor.get_status(g_stat);
     if (ret == 0) {
-      if (g_stat.conv_ready) {
-          float voltage = 0.0f;
-          
-          ret = sensor.get_voltage(voltage);
-          if (ret) {
-              Serial.println("Read voltage failed!");
-          } else {
-              Serial.print("Measured voltage (V): ");
-              Serial.println(voltage, 4);
-          }
+        if (g_stat.conv_ready) {
+            float voltage = 0.0f;
 
-          // Resend conversion command
-          sensor.send_quick_command();    
-      } else {
-          Serial.println("Conversion not ready!");
-      }
+            ret = sensor.get_voltage(voltage);
+            if (ret) {
+                Serial.println("Read voltage failed!");
+            } else {
+                Serial.print("Measured voltage (V): ");
+                Serial.println(voltage, 4);
+            }
+
+            // Resend conversion command
+            sensor.send_quick_command();    
+        } else {
+            Serial.println("Conversion not ready!");
+        }
     }
 }

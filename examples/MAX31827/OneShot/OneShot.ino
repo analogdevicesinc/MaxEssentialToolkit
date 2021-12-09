@@ -2,6 +2,7 @@
 
 // I2C Addr depend on the R_SEL resistor
 MAX31827 temp_sensor(&Wire, MAX31827_I2C_ADDR_FOR_640_0_KOHM);
+MAX31827::status_t  status;
 
 void setup()  {
     int ret;
@@ -16,7 +17,6 @@ void setup()  {
 
 void loop()  {
     int ret;
-    MAX31827::status_t  status;
 
     ret = temp_sensor.start_meas(MAX31827::PERIOD_ONE_SHOT);
     if (ret) {

@@ -115,6 +115,7 @@ float MAX31825::convert_count_2_temp(uint16_t count)
 {
     float temp;
 
+    // 16th bit is sign bit
     if (count & (1<<15) ) {
         count = (count ^ 0xFFFF) + 1;
         temp  = count * TEMP_RESOLUTION_FOR_12_BIT;
@@ -135,7 +136,7 @@ int MAX31825::onewire_reset(void)
     } else {
         ret = m_onewire->reset();
         if (ret == 1) { // 1 means success
-            ret = 0; // convert ret val
+            ret = 0; // means success
         } else {
             ret = -1; // means fail
         }
@@ -285,8 +286,6 @@ MAX31825::MAX31825(TwoWire *i2c, byte i2c_addr)
     
     m_interface = INTF_I2C;
     m_ds2482 = new DS2482(i2c, i2c_addr);
-    //
-    m_addr_mode = ADDRESSING_NONE;
 }
 
 MAX31825::MAX31825(OneWire *onewire)
@@ -299,12 +298,12 @@ MAX31825::MAX31825(OneWire *onewire)
     
     m_interface = INTF_1W;
     m_onewire = onewire;
-    //
-    m_addr_mode = ADDRESSING_NONE;
 }
 
 void MAX31825::begin(void)
 {
+    m_addr_mode = ADDRESSING_NONE;
+
     if (m_interface == INTF_I2C) {
         m_ds2482->begin();
         //
@@ -345,21 +344,18 @@ int MAX31825::read_rom(byte (&code)[8])
     int ret = -1;
 
     if ( onewire_reset() ) {
-        Serial.println("FAIL 2");
         return -1;
     }
         
     if (m_interface == INTF_I2C) {
         
         if ( onewire_write_byte(MAX31825_CMD_ROM_READ) ) {
-            Serial.println("FAIL 3");
             return -1;
         }
         
         for (int i=0; i<8; i++) {
             delay(1);
             if ( onewire_read_byte(code[i]) ) {
-                Serial.println("FAIL 4");
                 return -1;
             }
         }

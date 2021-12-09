@@ -4,7 +4,7 @@
  *  Please download and install OneWire library if you do not have it
  *  Link: https://github.com/PaulStoffregen/OneWire
  *
- *  Please note that the onewire library maynot be ported on your target platform.
+ *  Please note that the onewire library may not be ported on your target platform.
  *  Below example tested on Arduino Uno board.
  */
 OneWire onewire(10); // Pin 10, Change it if you want to use different pin as onewire.

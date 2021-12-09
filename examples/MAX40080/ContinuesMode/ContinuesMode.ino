@@ -26,17 +26,17 @@ void setup() {
     sensor.begin();
 
 #if defined(ARDUINO_MAXIM)
-  /*
-   *  Default Wire is #1 for MAX32630FTHR board
-   *  If you change Wire number (while creating MAX40080 instance)
-   *  you need to update below pins too, to match them with new Wire number
-   */
-  #if defined(MAX32630)
-    useVDDIO(pin_alert); // To MAX32630FTHR board drive ALERT pin with 1.8V
-  
-    useVDDIO(PIN_WIRE1_SDA); // To MAX32630FTHR board drive SDA line with 1.8V
-    useVDDIO(PIN_WIRE1_SCL); // To MAX32630FTHR board drive SCL line with 1.8V
-  #endif
+    /*
+    *  Default Wire is #1 for MAX32630FTHR board
+    *  If you change Wire number (while creating MAX40080 instance)
+    *  you need to update below pins too, to match them with new Wire number
+    */
+    #if defined(MAX32630)
+        useVDDIO(pin_alert); // To MAX32630FTHR board drive ALERT pin with 1.8V
+
+        useVDDIO(PIN_WIRE1_SDA); // To MAX32630FTHR board drive SDA line with 1.8V
+        useVDDIO(PIN_WIRE1_SCL); // To MAX32630FTHR board drive SCL line with 1.8V
+    #endif
 #endif
 
     /*
@@ -84,7 +84,7 @@ void loop()  {
     
     if (pin_state == LOW) {
         //
-        sensor.clear_interrupts();
+        sensor.clear_interrupt_flags();
 
         int fifo_data_count = 0;
         float voltage;
@@ -119,9 +119,9 @@ void loop()  {
                 Serial.print(current, 4);
                 Serial.println(" (A)");
             } else if ( ret == MAX40080_ERR_DATA_NOT_VALID) {
-              Serial.println("Read failed (Not Valid Data)!");
+                Serial.println("Read failed (Not Valid Data)!");
             } else {
-              Serial.println("Read failed!");
+                Serial.println("Read failed!");
             }
         }
     } 

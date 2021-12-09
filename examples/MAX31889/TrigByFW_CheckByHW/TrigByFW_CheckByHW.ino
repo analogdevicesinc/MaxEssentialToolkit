@@ -1,7 +1,7 @@
 #include <MaxEssential.h>
 
 
-MAX31889 temp_sensor(&Wire);
+MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
 // Pin 43 is P5.3 (for MAX32630FTHR Board)
 // More detail here: https://os.mbed.com/platforms/MAX32630FTHR/
 int pin_alarm = 43; // MAX31889 GPIO0 pin connects to MAX32630FTHR P5.3

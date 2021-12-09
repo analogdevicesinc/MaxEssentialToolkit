@@ -501,7 +501,6 @@ uint16_t MAX31328::get_calendar(max31328_calendar_t* calendar)
     return ret;
 }
 
-
 /**********************************************************//**
 * Get either Alarm1 or Alarm2 of MAX31328
 *
@@ -662,7 +661,6 @@ uint16_t MAX31328::get_temperature(void)
     return ret;    
 }
 
-
 /**********************************************************//**
 * Get epoch time based on current RTC time and date.  
 * MAX31328 must be configured and running before this fx is 
@@ -723,7 +721,6 @@ time_t MAX31328::get_epoch(void)
     return(mktime(&sys_time));
 }
 
-
 /**********************************************************//**
 * Private mmber fx, converts unsigned char to BCD
 *
@@ -751,7 +748,6 @@ uint16_t MAX31328::uchar_2_bcd(uint8_t data)
    
    return(bcd_result);   
 }
-
 
 /**********************************************************//**
 * Private mmber fx, converts BCD to a uint8_t

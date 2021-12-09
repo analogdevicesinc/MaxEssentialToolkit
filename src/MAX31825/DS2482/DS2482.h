@@ -37,7 +37,7 @@
 
 #include <MAX31825/DS2482/DS2482_registers.h>
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <Wire.h>
 
 
@@ -58,8 +58,8 @@ class DS2482 {
         int  onewire_read_byte(byte &byt);
         int  onewire_write_triplet(byte byt);
     private:
-        byte m_slave_addr;
         TwoWire *m_i2c;
+        byte     m_slave_addr;
 
         int read_byte(byte &byt);
         int write_byte(byte byt, bool stop=true);

@@ -41,10 +41,10 @@
  */
 #define MAX40080_R_CFG                      0x00
 #define MAX40080_R_STATUS                   0x02
-#define MAX40080_R_THRSHLD_OVER_CURRENT     0x04 // Over-current threshold. When the measured current is higher than this value an alert is issued on ALERT_ and one status register bit is set
-#define MAX40080_R_THRSHLD_OVER_VOLTAGE     0x05 // Over-voltage threshold. When the measured voltage is higher than this value an alert is issued on ALERT_ and one status register bit is set
-#define MAX40080_R_THRSHLD_UNDER_VOLTAGE    0x06 // Under-voltage threshold. When the measured voltage is lower than this value an alert is issued on ALERT_ and one status register bit is set
-#define MAX40080_R_WAKEUP_CURRENT           0x07 // Wake-up current threshold when in Low-Power Mode. When the measured current is higher than this value the device will switch into Active Mode. Additionally, an alert is issued on ALERT_ and one status register bit is set
+#define MAX40080_R_THRSHLD_OVER_CURRENT     0x04 
+#define MAX40080_R_THRSHLD_OVER_VOLTAGE     0x05 
+#define MAX40080_R_THRSHLD_UNDER_VOLTAGE    0x06 
+#define MAX40080_R_WAKEUP_CURRENT           0x07 
 #define MAX40080_R_MAX_PEAK_CURRENT         0x08
 #define MAX40080_R_FIFO_CFG                 0x0A
 #define MAX40080_R_CURRENT                  0x0C
@@ -143,7 +143,6 @@
 #define MAX40080_DEFAULT_I2C_ADDR_FOR_0_309_KOHM        (0x3D)
 #define MAX40080_DEFAULT_I2C_ADDR_FOR_0_200_KOHM        (0x3E)
 #define MAX40080_DEFAULT_I2C_ADDR_FOR_0_0953_KOHM       (0x3F)
-
 
 
 #endif /* _MAX40080_REGISTERS_H_ */

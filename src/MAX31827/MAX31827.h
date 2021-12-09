@@ -37,13 +37,16 @@
 
 #include <MAX31827/MAX31827_registers.h>
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <Wire.h>
 
 
+#define MAX31827_ERR_UNKNOWN            (-1)
+#define MAX31827_ERR_CRC_MISMATCH       (-2)
+
 /*
  *
- * MAX31827 Temperature Sensor Class
+ * MAX31827 Temperature Sensor
  * 
  */
 class MAX31827 {
@@ -56,23 +59,23 @@ class MAX31827 {
         } status_t;
 
         typedef enum {
-            PERIOD_0_SHUTDOWN  = MAX31827_S_CFG_CONV_RATE_SHUTDOWN,
-            PERIOD_1_DIV_64SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_64SEC,
-            PERIOD_1_DIV_32SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_32SEC,
-            PERIOD_1_DIV_16SEC = MAX31827_S_CFG_CONV_RATE_1_DIV_16SEC,
-            PERIOD_1_DIV_4SEC  = MAX31827_S_CFG_CONV_RATE_1_DIV_4SEC,
-            PERIOD_1_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_1_DIV_1SEC,
-            PERIOD_4_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_4_DIV_1SEC,
-            PERIOD_8_DIV_1SEC  = MAX31827_S_CFG_CONV_RATE_8_DIV_1SEC,
+            PERIOD_0_SHUTDOWN  = 0<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_1_DIV_64SEC = 1<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_1_DIV_32SEC = 2<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_1_DIV_16SEC = 3<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_1_DIV_4SEC  = 4<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_1_DIV_1SEC  = 5<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_4_DIV_1SEC  = 6<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_8_DIV_1SEC  = 7<<MAX31827_F_CFG_CONV_RATE_POS,
             // One Shut moe
             PERIOD_ONE_SHOT,
         } conv_period_t;
 
         typedef enum {
-            RESOLUTION_8_BIT   = MAX31827_S_CFG_RESOLUTION_8_BIT,
-            RESOLUTION_9_BIT   = MAX31827_S_CFG_RESOLUTION_9_BIT,
-            RESOLUTION_10_BIT  = MAX31827_S_CFG_RESOLUTION_10_BIT,
-            RESOLUTION_12_BIT  = MAX31827_S_CFG_RESOLUTION_12_BIT
+            RESOLUTION_8_BIT   = 0<<MAX31827_F_CFG_RESOLUTION_POS,
+            RESOLUTION_9_BIT   = 1<<MAX31827_F_CFG_RESOLUTION_POS,
+            RESOLUTION_10_BIT  = 2<<MAX31827_F_CFG_RESOLUTION_POS,
+            RESOLUTION_12_BIT  = 3<<MAX31827_F_CFG_RESOLUTION_POS
         } resolution_t;
 
         typedef enum {
@@ -81,10 +84,10 @@ class MAX31827 {
         } mode_t;
 
         typedef enum {
-            FAULT_NUMBER_1   = MAX31827_S_CFG_FAULT_QUE_1,
-            FAULT_NUMBER_2   = MAX31827_S_CFG_FAULT_QUE_2,
-            FAULT_NUMBER_4   = MAX31827_S_CFG_FAULT_QUE_4,
-            FAULT_NUMBER_8   = MAX31827_S_CFG_FAULT_QUE_8
+            FAULT_NUMBER_1   = 0<<MAX31827_F_CFG_FAULT_QUE_POS,
+            FAULT_NUMBER_2   = 1<<MAX31827_F_CFG_FAULT_QUE_POS,
+            FAULT_NUMBER_4   = 2<<MAX31827_F_CFG_FAULT_QUE_POS,
+            FAULT_NUMBER_8   = 3<<MAX31827_F_CFG_FAULT_QUE_POS
         } fault_t;
 
         // constructer
@@ -95,29 +98,30 @@ class MAX31827 {
         int get_status(status_t &stat);
         
         //
-        int set_temp(float temp, uint8_t reg);
         int set_alarm(float temp_low, float temp_high);
         int get_alarm(float &temp_low, float &temp_high);
         int set_alarm_hyst(float tl_hyst, float th_hyst);
         int get_alarm_hyst(float &tl_hyst, float &th_hyst);
+        int set_temp(float temp, uint8_t register);
 
         int start_meas(conv_period_t period);
-        int get_temp(float &temp, uint8_t reg=MAX31827_R_TEMPERATURE);
+        int get_temp(float &temp, uint8_t register=MAX31827_R_TEMPERATURE);
         //
-        int set_pec_status(bool enable);
         int set_timeout_status(bool enable);
         int set_resolution(resolution_t res);
         int set_alarm_polarity(bool high);
         int set_cmp_int_mode(mode_t mode);
         int set_fault_number(fault_t fault);
+        int set_pec_status(bool enable);
+
+        // Register direct access function
+        int read_register(uint8_t register, uint16_t &val);
+        int write_register(uint8_t register, uint16_t val);
 
     private:
-        uint8_t m_slave_addr;
         TwoWire *m_i2c;
-        bool m_pec_status;
-
-        int read_register(uint8_t reg, uint16_t &val);
-        int write_register(uint8_t reg, uint16_t val);
+        uint8_t  m_slave_addr;
+        bool     m_pec_status;
 };
 
 #endif /* _MAX31827_H_ */

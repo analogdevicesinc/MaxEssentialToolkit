@@ -39,7 +39,7 @@
 #define GPIO_MODE_GET_MODE(idx, val)      ( (val>>(idx*6)) & 0x03)
 #define GPIO_LOGIC_LEVEL_MASK(idx)        (1<<(idx*3))
 //
-#define TEMP_PER_BIT                      (0.005f)
+#define TEMP_PER_BIT                      (0.005f) // 16bit resolution
 
 /************************************ Private Functions ***********************/
 int MAX31889::read_register(uint8_t reg, uint8_t *data, int len)
@@ -132,7 +132,9 @@ float MAX31889::convert_count_2_temp(uint16_t count)
 {
     float temp;
 
+    // 16th bit is sign bit
     if (count & (1<<15) ) {
+        // it is 2 complement
         count = (count ^ 0xFFFF) + 1;
         temp  = count * TEMP_PER_BIT;
         temp  = 0 - temp; // convert to negative
@@ -346,9 +348,6 @@ int MAX31889::get_id(id_t &id)
     int ret = 0;
 
     ret = read_register(MAX31889_R_ROM_ID_1, id.rom_id, 6);
-    if (ret) {
-        return -1;
-    }
 
     if (ret == 0) {
         ret = read_register(MAX31889_R_PART_IDF, &id.part_id); 
@@ -394,7 +393,7 @@ int MAX31889::get_num_of_sample(void)
     return num_of_samples;
 }
 
-int MAX31889::read_samples(float *temp, int num_of_samples)
+int MAX31889::read_samples(float *temp, int num_of_samples/*=1*/)
 {
     int  ret = 0;
     uint8_t buf[2];
