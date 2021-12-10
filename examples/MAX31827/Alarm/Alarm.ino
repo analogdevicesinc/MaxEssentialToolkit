@@ -14,12 +14,21 @@ void setup()  {
     int ret;
 
     Serial.begin(115200);
+    //
+    Serial.println(" ");
+    Serial.println("MAX31827 alarm mode use case example:");
+    Serial.println("------------------------------------------");
 
     // Configure alarm pin as input
     pinMode(pin_alarm, INPUT);
 
     temp_sensor.begin();
 
+    ret = temp_sensor.set_resolution(MAX31827::RESOLUTION_12_BIT);
+    if (ret) {
+        Serial.println("Resolution set failed");    
+    }
+    
     ret = temp_sensor.set_alarm(ALARM_LOW, ALARM_HIGH);
     if (ret) {
         Serial.println("Set alarm failed!");
@@ -43,7 +52,6 @@ void setup()  {
     if (ret) {
         Serial.println("Start measurement failed!");
     } else {
-        Serial.println("---------------------");
         Serial.println("Measurement Started");
     }
 }

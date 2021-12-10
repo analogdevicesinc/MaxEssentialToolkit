@@ -8,11 +8,39 @@ void setup()  {
     int ret;
 
     Serial.begin(115200);
+    //
+    Serial.println(" ");
+    Serial.println("MAX31827 oneshot mode use case example:");
+    Serial.println("Temperature conversion will be triggered  by oneshot mode command");
+    Serial.println("Conversion status will be checked by reading status register");
+    Serial.println("---------------------------------------------------------------");
     
     temp_sensor.begin();
 
-    Serial.println("---------------------");
+    MAX31827::reg_cfg_t cfg;
+    ret = temp_sensor.get_configuration(cfg);
+    if (ret) {
+        Serial.println("Get configuration failed!");    
+    }
+
+    switch (cfg.resolution) {
+        case MAX31827::RESOLUTION_8_BIT :  Serial.println("Current Resolution  8 bits");   break;
+        case MAX31827::RESOLUTION_9_BIT :  Serial.println("Current Resolution  9 bits");   break;
+        case MAX31827::RESOLUTION_10_BIT:  Serial.println("Current Resolution 10 bits");   break;
+        case MAX31827::RESOLUTION_12_BIT:  Serial.println("Current Resolution 12 bits");   break;
+    }
+    
+    if (cfg.resolution != MAX31827::RESOLUTION_12_BIT) { // Update resolution if it is not 12bits
+        ret = temp_sensor.set_resolution(MAX31827::RESOLUTION_12_BIT);
+        if (ret) {
+            Serial.println("Resolution set failed!");    
+        } else {
+            Serial.println("Resolution is updated to 12 bits");
+        }
+    }
+    
     Serial.println("Measurement Started");
+    Serial.println(" ");
 }
 
 void loop()  {
@@ -30,7 +58,7 @@ void loop()  {
     if (ret) {
         Serial.println("Status read failed!");
         return;
-    }
+    } 
     
     if (status.temp_ready) {
         float temp = 0;
@@ -42,5 +70,7 @@ void loop()  {
             Serial.print("Temperature (Celsius): ");
             Serial.println(temp, 4);
         }
+    } else {
+        Serial.println("Conversion not complete yet!");
     }
 }

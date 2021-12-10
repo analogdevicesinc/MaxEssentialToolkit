@@ -40,7 +40,7 @@ void setup()  {
     //
     Serial.println(" ");
     Serial.println("MAX31889 use case example:");
-    Serial.println("The temperature conversion will be trigger by GPIO control");
+    Serial.println("The temperature conversion will be triggered by GPIO control");
     Serial.println("Convertaion decision will be done by checking MAX31889 interrupt pin");
     Serial.println("------------------------------------------------------------");
     

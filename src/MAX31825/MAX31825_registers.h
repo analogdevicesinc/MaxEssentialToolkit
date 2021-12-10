@@ -112,5 +112,9 @@
 
 #define MAX31825_FAMILY_CODE                 0x3B
 
+/* TMP + STATUS + CFG + TH + TL = 8bytes */
+#define MAX31825_SCRATCHPAD_SIZE            8
+#define MAX31825_ROMCODE_SIZE               8
+
 
 #endif /* _MAX31825_REGISTERS_H_ */

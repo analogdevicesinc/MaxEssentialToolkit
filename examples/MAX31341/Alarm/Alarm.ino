@@ -23,7 +23,7 @@ void clear_irq_flag(void) {
     
     // reading status register will clear flags
     ret = rtc.read_register(MAX31341_REG_INT_STATUS, &reg);
-     if (ret) {
+    if (ret) {
         Serial.println("Read Status failed!");
     }
 }

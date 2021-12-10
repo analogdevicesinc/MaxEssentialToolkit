@@ -55,6 +55,9 @@
 #define MAX31825_CMD_DETECT_ADDR        0x88  // Loads location bits
 #define MAX31825_CMD_SELECT_ADDR        0x70  // Selects device with location bits that match transmitted bits. Follow with a Convert, Read, or Write command.
 
+#define GET_BIT_VAL(val, pos, mask)     ( ( (val) & mask) >> pos )
+#define SET_BIT_VAL(val, pos, mask)     ( ( ((int)val) << pos) & mask )
+
 #define SCRATCHPAD_GET_TEMP_COUNT(scpth)   ( (scpth[MAX31825_R_TEMP_MSB]<<8) | scpth[MAX31825_R_TEMP_LSB] )
 #define SCRATCHPAD_GET_STATUS(scpth)       (  scpth[MAX31825_R_STATUS] )
 #define SCRATCHPAD_GET_CFG(scpth)          (  scpth[MAX31825_R_CFG] )
@@ -196,7 +199,7 @@ int MAX31825::write_cmd(byte cmd)
                return ret;
             }
             
-            for (int i = 0; i < 8; i++) {
+            for (int i = 0; i < sizeof(m_serial); i++) {
                 delay(1);
                 ret = onewire_write_byte( m_serial[i] );
                 if (ret) {
@@ -243,7 +246,7 @@ int MAX31825::read_scratchpad(void)
     } 
     
     delay(1);
-    for (i=0; i<8; i++) {        
+    for (i=0; i < sizeof(m_scratchpad); i++) {        
         ret = onewire_read_byte(m_scratchpad[i]);
         if (ret) {
             return ret;
@@ -264,7 +267,7 @@ int MAX31825::write_scratchpad(void)
     } 
     
     // Write CFG, TH, TL
-    for (i=3; i<8; i++) {   
+    for (i=3; i < sizeof(m_scratchpad); i++) {   
         delay(1);    
         ret = onewire_write_byte(m_scratchpad[i]);
         if (ret) {
@@ -331,7 +334,7 @@ int MAX31825::set_addressing_mode(addressing_mode_t addr_mode, byte location/*=0
         m_addr_mode = addr_mode;
         m_target_addr = location;
         
-        for (int i=0; i<8; i++) {
+        for (int i=0; i < sizeof(m_serial); i++) {
             m_serial[i] = rom_code[i];
         }        
     }
@@ -353,7 +356,7 @@ int MAX31825::read_rom(byte (&code)[8])
             return -1;
         }
         
-        for (int i=0; i<8; i++) {
+        for (int i=0; i < MAX31825_ROMCODE_SIZE; i++) {
             delay(1);
             if ( onewire_read_byte(code[i]) ) {
                 return -1;
@@ -412,16 +415,22 @@ int MAX31825::get_status(status_t &stat)
     return ret;
 }
 
-int MAX31825::get_conf_reg(byte &cfg)
+int MAX31825::get_configuration(reg_cfg_t &cfg)
 {
     int  ret = 0;
+    uint8_t val8;
 
     ret = read_scratchpad();
     if (ret) {
         return ret;
     }
-    cfg = SCRATCHPAD_GET_CFG(m_scratchpad);
-    
+    val8 = SCRATCHPAD_GET_CFG(m_scratchpad);
+
+    cfg.conversion_rate = (conv_period_t) GET_BIT_VAL(val8, MAX31825_F_CFG_CONV_RATE_POS,  MAX31825_F_CFG_CONV_RATE);
+    cfg.comp_int        = (mode_t)        GET_BIT_VAL(val8, MAX31825_F_CFG_CMP_INT_POS,    MAX31825_F_CFG_CMP_INT);
+    cfg.resolution      = (resolution_t)  GET_BIT_VAL(val8, MAX31825_F_CFG_RESOLUTION_POS, MAX31825_F_CFG_RESOLUTION);  
+    cfg.format          =                 GET_BIT_VAL(val8, MAX31825_F_CFG_FORMAT_POS,     MAX31825_F_CFG_FORMAT);
+
     return ret;
 }
 
@@ -429,15 +438,15 @@ int MAX31825::set_conv_rate(conv_period_t period)
 {
     int  ret = 0;
     byte cfg;
-    byte val = (byte)(period & MAX31825_F_CFG_CONV_RATE); // mask other bits
     
     ret = read_scratchpad();
     if (ret) {
         return ret;
     }
     //
-    cfg = SCRATCHPAD_GET_CFG(m_scratchpad);
-    cfg = (cfg & ~MAX31825_F_CFG_CONV_RATE) | val;
+    cfg  = SCRATCHPAD_GET_CFG(m_scratchpad);
+    cfg &= ~MAX31825_F_CFG_CONV_RATE;
+    cfg |= SET_BIT_VAL(period, MAX31825_F_CFG_CONV_RATE_POS, MAX31825_F_CFG_CONV_RATE);
     
     m_scratchpad[MAX31825_R_CFG] = cfg;
     ret = write_scratchpad();
@@ -449,7 +458,6 @@ int MAX31825::set_resolution(resolution_t resolution)
 {
     int  ret = 0;
     byte cfg;
-    byte val = (byte)(resolution & MAX31825_F_CFG_RESOLUTION); // mask other bits
 
     ret = read_scratchpad();
     if (ret) {
@@ -460,7 +468,8 @@ int MAX31825::set_resolution(resolution_t resolution)
     // to switch shutdown mode
     cfg &= ~MAX31825_F_CFG_CONV_RATE;
     //
-    cfg = (cfg & ~MAX31825_F_CFG_RESOLUTION) | val;
+    cfg &= ~MAX31825_F_CFG_RESOLUTION;
+    cfg |= SET_BIT_VAL(resolution, MAX31825_F_CFG_RESOLUTION_POS, MAX31825_F_CFG_RESOLUTION);
     
     m_scratchpad[MAX31825_R_CFG] = cfg;
     ret = write_scratchpad();

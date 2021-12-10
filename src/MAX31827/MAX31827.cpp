@@ -33,6 +33,10 @@
 
 #include <MAX31827/MAX31827.h>
 
+
+#define GET_BIT_VAL(val, pos, mask)     ( ( (val) & mask) >> pos )
+#define SET_BIT_VAL(val, pos, mask)     ( ( ((int)val) << pos) & mask )
+
 // 
 #define TEMP_RESOLUTION_FOR_12_BIT      (0.0625f)
 #define TEMP_RESOLUTION_FOR_10_BIT      (0.25f)
@@ -266,6 +270,31 @@ int MAX31827::get_alarm_hyst(float &tl_hyst, float &th_hyst)
     return ret;
 }
 
+int MAX31827::get_configuration(reg_cfg_t &cfg)
+{
+    int  ret = 0;
+    uint16_t val16;
+
+    ret = read_register(MAX31827_R_CFG, val16);
+    if (ret) {
+        return -1;
+    }
+
+    cfg.oneshot         =                 GET_BIT_VAL(val16, MAX31827_F_CFG_ONESHOT_POS,        MAX31827_F_CFG_ONESHOT);
+    cfg.conversion_rate = (conv_period_t) GET_BIT_VAL(val16, MAX31827_F_CFG_CONV_RATE_POS,      MAX31827_F_CFG_CONV_RATE);
+    cfg.pec             =                 GET_BIT_VAL(val16, MAX31827_F_CFG_PEC_ENABLE_POS,     MAX31827_F_CFG_PEC_ENABLE);  
+    cfg.timeout         =                 GET_BIT_VAL(val16, MAX31827_F_CFG_TIMEOUT_POS,        MAX31827_F_CFG_TIMEOUT);
+    cfg.resolution      = (resolution_t)  GET_BIT_VAL(val16, MAX31827_F_CFG_RESOLUTION_POS,     MAX31827_F_CFG_RESOLUTION);
+    cfg.alarm_polarity  =                 GET_BIT_VAL(val16, MAX31827_F_CFG_ALARM_POL_POS,      MAX31827_F_CFG_ALARM_POL);
+    cfg.comp_int        = (mode_t)        GET_BIT_VAL(val16, MAX31827_F_CFG_CMP_INT_POS,        MAX31827_F_CFG_CMP_INT);
+    cfg.fault_queue     = (fault_t)       GET_BIT_VAL(val16, MAX31827_F_CFG_FAULT_QUE_POS,      MAX31827_F_CFG_FAULT_QUE);
+    cfg.pec_error       =                 GET_BIT_VAL(val16, MAX31827_F_CFG_PEC_ERR_POS,        MAX31827_F_CFG_PEC_ERR);
+    cfg.under_temp_stat =                 GET_BIT_VAL(val16, MAX31827_F_CFG_UNDER_TEMP_STAT_POS,MAX31827_F_CFG_UNDER_TEMP_STAT);
+    cfg.over_temp_stat  =                 GET_BIT_VAL(val16, MAX31827_F_CFG_OVER_TEMP_STAT_POS, MAX31827_F_CFG_OVER_TEMP_STAT);
+
+    return ret;
+}
+
 int MAX31827::set_pec_status(bool enable)
 {
     int  ret = 0;
@@ -315,10 +344,6 @@ int MAX31827::set_resolution(resolution_t resolution)
 {
     int  ret = 0;
     uint16_t cfg;
-    uint16_t val = (uint16_t)resolution;
-
-    // mask other bits
-    val &= (MAX31827_F_CFG_RESOLUTION);
 
     ret = read_register(MAX31827_R_CFG, cfg);
     if (ret) {
@@ -328,7 +353,9 @@ int MAX31827::set_resolution(resolution_t resolution)
     // to switch shutdown mode
     cfg &= ~MAX31827_F_CFG_CONV_RATE;
     //
-    cfg = (cfg & ~MAX31827_F_CFG_RESOLUTION) | val;
+    cfg &= ~MAX31827_F_CFG_RESOLUTION;
+    cfg |= SET_BIT_VAL(resolution, MAX31827_F_CFG_RESOLUTION_POS, MAX31827_F_CFG_RESOLUTION);;
+
     ret = write_register(MAX31827_R_CFG, cfg);
 
     return ret;
@@ -380,17 +407,15 @@ int MAX31827::set_fault_number(fault_t fault)
 {
     int  ret = 0;
     uint16_t cfg;
-    uint16_t val = (uint16_t)fault;
-
-    // mask other bits
-    val &= MAX31827_F_CFG_FAULT_QUE;
 
     ret = read_register(MAX31827_R_CFG, cfg);
     if (ret) {
         return -1;
     }
 
-    cfg = (cfg & ~MAX31827_F_CFG_FAULT_QUE) | val;
+    cfg &= ~MAX31827_F_CFG_FAULT_QUE;
+    cfg |= SET_BIT_VAL(fault, MAX31827_F_CFG_FAULT_QUE_POS, MAX31827_F_CFG_FAULT_QUE);
+    
     ret = write_register(MAX31827_R_CFG, cfg);
 
     return ret;
@@ -400,10 +425,6 @@ int MAX31827::start_meas(conv_period_t period)
 {
     int  ret = 0;
     uint16_t cfg;
-    uint16_t val = (uint16_t)period;
-
-    // mask other bits
-    val &= MAX31827_F_CFG_CONV_RATE;
 
     ret = read_register(MAX31827_R_CFG, cfg);
     if (ret) {
@@ -416,7 +437,7 @@ int MAX31827::start_meas(conv_period_t period)
     if (period == PERIOD_ONE_SHOT) {
         cfg |= MAX31827_F_CFG_ONESHOT;
     } else {
-        cfg |= val;
+        cfg |= SET_BIT_VAL(period, MAX31827_F_CFG_CONV_RATE_POS, MAX31827_F_CFG_CONV_RATE);
     }
     ret  = write_register(MAX31827_R_CFG, cfg);
 

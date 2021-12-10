@@ -59,23 +59,23 @@ class MAX31827 {
         } status_t;
 
         typedef enum {
-            PERIOD_0_SHUTDOWN  = 0<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_64SEC = 1<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_32SEC = 2<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_16SEC = 3<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_4SEC  = 4<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_1SEC  = 5<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_4_DIV_1SEC  = 6<<MAX31827_F_CFG_CONV_RATE_POS,
-            PERIOD_8_DIV_1SEC  = 7<<MAX31827_F_CFG_CONV_RATE_POS,
+            PERIOD_0_SHUTDOWN  = 0,
+            PERIOD_1_DIV_64SEC = 1,
+            PERIOD_1_DIV_32SEC = 2,
+            PERIOD_1_DIV_16SEC = 3,
+            PERIOD_1_DIV_4SEC  = 4,
+            PERIOD_1_DIV_1SEC  = 5,
+            PERIOD_4_DIV_1SEC  = 6,
+            PERIOD_8_DIV_1SEC  = 7,
             // One Shut moe
             PERIOD_ONE_SHOT,
         } conv_period_t;
 
         typedef enum {
-            RESOLUTION_8_BIT   = 0<<MAX31827_F_CFG_RESOLUTION_POS,
-            RESOLUTION_9_BIT   = 1<<MAX31827_F_CFG_RESOLUTION_POS,
-            RESOLUTION_10_BIT  = 2<<MAX31827_F_CFG_RESOLUTION_POS,
-            RESOLUTION_12_BIT  = 3<<MAX31827_F_CFG_RESOLUTION_POS
+            RESOLUTION_8_BIT   = 0,
+            RESOLUTION_9_BIT   = 1,
+            RESOLUTION_10_BIT  = 2,
+            RESOLUTION_12_BIT  = 3
         } resolution_t;
 
         typedef enum {
@@ -84,11 +84,25 @@ class MAX31827 {
         } mode_t;
 
         typedef enum {
-            FAULT_NUMBER_1   = 0<<MAX31827_F_CFG_FAULT_QUE_POS,
-            FAULT_NUMBER_2   = 1<<MAX31827_F_CFG_FAULT_QUE_POS,
-            FAULT_NUMBER_4   = 2<<MAX31827_F_CFG_FAULT_QUE_POS,
-            FAULT_NUMBER_8   = 3<<MAX31827_F_CFG_FAULT_QUE_POS
+            FAULT_NUMBER_1   = 0,
+            FAULT_NUMBER_2   = 1,
+            FAULT_NUMBER_4   = 2,
+            FAULT_NUMBER_8   = 3
         } fault_t;
+
+        typedef struct {
+            uint8_t        oneshot;
+            conv_period_t  conversion_rate;
+            uint8_t        pec;
+            uint8_t        timeout;
+            resolution_t   resolution;
+            uint8_t        alarm_polarity;
+            mode_t         comp_int;
+            fault_t        fault_queue;
+            uint8_t        pec_error;
+            uint8_t        under_temp_stat;
+            uint8_t        over_temp_stat;
+        } reg_cfg_t;
 
         // constructer
         MAX31827(TwoWire *i2c, uint8_t i2c_addr);
@@ -96,6 +110,7 @@ class MAX31827 {
         void begin(void);
         //
         int get_status(status_t &stat);
+        int get_configuration(reg_cfg_t &cfg);
         
         //
         int set_alarm(float temp_low, float temp_high);

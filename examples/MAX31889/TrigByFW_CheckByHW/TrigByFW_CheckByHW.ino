@@ -32,7 +32,7 @@ void setup()  {
     //
     Serial.println(" ");
     Serial.println("MAX31889 use case example:");
-    Serial.println("The temperature conversion will be trigger by MAX31889 register");
+    Serial.println("The temperature conversion will be triggered by MAX31889 register");
     Serial.println("Convertaion decision will be done by checking MAX31889 interrupt pin");
     Serial.println("------------------------------------------------------------");
 

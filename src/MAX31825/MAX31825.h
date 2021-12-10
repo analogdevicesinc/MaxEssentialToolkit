@@ -57,21 +57,21 @@ class MAX31825 {
         } status_t;
 
         typedef enum {
-            PERIOD_0_SHUTDOWN  = 0<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_64SEC = 1<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_32SEC = 2<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_16SEC = 3<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_4SEC  = 4<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_1_DIV_1SEC  = 5<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_4_DIV_1SEC  = 6<<MAX31825_F_CFG_CONV_RATE_POS,
-            PERIOD_8_DIV_1SEC  = 7<<MAX31825_F_CFG_CONV_RATE_POS,
+            PERIOD_0_SHUTDOWN  = 0,
+            PERIOD_1_DIV_64SEC = 1,
+            PERIOD_1_DIV_32SEC = 2,
+            PERIOD_1_DIV_16SEC = 3,
+            PERIOD_1_DIV_4SEC  = 4,
+            PERIOD_1_DIV_1SEC  = 5,
+            PERIOD_4_DIV_1SEC  = 6,
+            PERIOD_8_DIV_1SEC  = 7
         } conv_period_t;
 
         typedef enum {
-            RESOLUTION_8_BIT   = 0<<MAX31825_F_CFG_RESOLUTION_POS,
-            RESOLUTION_9_BIT   = 1<<MAX31825_F_CFG_RESOLUTION_POS,
-            RESOLUTION_10_BIT  = 2<<MAX31825_F_CFG_RESOLUTION_POS,
-            RESOLUTION_12_BIT  = 3<<MAX31825_F_CFG_RESOLUTION_POS
+            RESOLUTION_8_BIT   = 0,
+            RESOLUTION_9_BIT   = 1,
+            RESOLUTION_10_BIT  = 2,
+            RESOLUTION_12_BIT  = 3
         } resolution_t;
 
         typedef enum {
@@ -84,6 +84,13 @@ class MAX31825 {
             ADDRESSING_USE_ROM,      // Use rom code to addressing target 
             ADDRESSING_USE_ADD1_ADD0 // Use resistor that connected to ADDR0
         } addressing_mode_t;
+
+        typedef struct {
+            conv_period_t conversion_rate;
+            mode_t        comp_int;
+            resolution_t  resolution;
+            uint8_t       format;
+        } reg_cfg_t;
 
         MAX31825(OneWire *onewire);
         MAX31825(TwoWire *i2c, byte i2c_addr);
@@ -104,14 +111,14 @@ class MAX31825 {
         int set_resolution(resolution_t res);
         int set_cmp_int_mode(mode_t mode);
         //
-        int get_conf_reg(byte &cfg);
+        int get_configuration(reg_cfg_t &cfg);
         
     private:
         DS2482   *m_ds2482;
         OneWire  *m_onewire;
         int  m_interface;
-        byte m_serial[8];
-        byte m_scratchpad[8];
+        byte m_serial[MAX31825_ROMCODE_SIZE];
+        byte m_scratchpad[MAX31825_SCRATCHPAD_SIZE];
         addressing_mode_t m_addr_mode;
         byte m_target_addr; // target addr for onewire
 

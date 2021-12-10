@@ -78,29 +78,36 @@ void setup()  {
     if (ret) {
         Serial.println("set_cmp_int_mode failed!");
     }
-    
-    delay(1);
-    ret = temp_sensor.set_conv_rate(MAX31825::PERIOD_4_DIV_1SEC);
+
+    MAX31825::reg_cfg_t cfg;
+    ret = temp_sensor.get_configuration(cfg);
     if (ret) {
-        Serial.println("Set convertion failed!");
+        Serial.println("Get configuration failed!");
+    } else {
+        Serial.println("--------- Configuration Register (BIN Format) ---------");
+        Serial.print("Convertion Rate: ");      Serial.println(cfg.conversion_rate, BIN);
+        Serial.print("COMP/INT       : ");      Serial.println(cfg.comp_int, BIN);
+        Serial.print("Resolution     : ");      Serial.println(cfg.resolution, BIN);
+        Serial.print("Format         : ");      Serial.println(cfg.format, BIN);
     }
 
-    delay(1);
-    ret = temp_sensor.start_meas();
-    if (ret) {
-        Serial.println("Start measurement failed!");
-    } else {
-        Serial.println("---------------------");
-        Serial.println("Measurement Started");
-    }
+    Serial.println("---------------------");
+    Serial.println("Measurement Started");
 }
 
 void loop()  {
+
+    int ret = temp_sensor.start_meas();
+    if (ret) {
+        Serial.println("Start measurement failed!");
+    }
+    
+    delay(500); // wait a little
     
     int pin_state = digitalRead(pin_alarm);
     
     if (pin_state == LOW) {
-        int ret;
+
         MAX31825::status_t  status;
         float temp = 0;
 
@@ -125,7 +132,5 @@ void loop()  {
             Serial.print("Temperature (Celsius): ");
             Serial.println(temp, 4);
         }
-        
-        delay(500); // wait a little
     }
 }
