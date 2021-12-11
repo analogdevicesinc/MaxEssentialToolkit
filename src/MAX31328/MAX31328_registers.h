@@ -66,10 +66,8 @@
 #define MAX31328_F_CTRL_A2IE            (1<<MAX31328_F_CTRL_A2IE_POS)
 #define MAX31328_F_CTRL_INTCN_POS       2  
 #define MAX31328_F_CTRL_INTCN           (1<<MAX31328_F_CTRL_INTCN_POS)
-#define MAX31328_F_CTRL_RS1_POS         3    
-#define MAX31328_F_CTRL_RS1             (1<<MAX31328_F_CTRL_RS1_POS)
-#define MAX31328_F_CTRL_RS2_POS         4   
-#define MAX31328_F_CTRL_RS2             (1<<MAX31328_F_CTRL_RS2_POS)
+#define MAX31328_F_CTRL_RS_POS          3    
+#define MAX31328_F_CTRL_RS              (3<<MAX31328_F_CTRL_RS_POS)
 #define MAX31328_F_CTRL_CONV_POS        5    
 #define MAX31328_F_CTRL_CONV            (1<<MAX31328_F_CTRL_CONV_POS)
 #define MAX31328_F_CTRL_BBSQW_POS       6    

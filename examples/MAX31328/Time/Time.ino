@@ -1,48 +1,48 @@
 #include <MaxEssentialToolkit.h>
 
-
 MAX31328 rtc(&Wire, MAX3128_I2C_ADDRESS);
 
+char time_char_buffer[40];
+struct tm rtc_ctime;
+
 void setup() {
+    int ret;
+
     Serial.begin(115200);
+    Serial.println("---------------------");
+    Serial.println("MAX31341 set get rtc use case example:");
+    Serial.println("RTC will be set to specific value then it will be read every second");
+    Serial.println(" ");
 
     rtc.begin();
-}
-
-void print_current_date_time() {
-    max31328_time_t time;
-    max31328_calendar_t date;
-
-    // Get Time and date from MAX31328
-    if (rtc.get_time(&time) || rtc.get_calendar(&date)) {
-        Serial.println("ERROR: Cannot get time.");
-        return;
+        
+    rtc_ctime.tm_year = 121; // years since 1900
+    rtc_ctime.tm_mon  = 10;  // 0-11
+    rtc_ctime.tm_mday = 24;  // 1-31
+    rtc_ctime.tm_hour = 15;  // 0-23
+    rtc_ctime.tm_min  = 10;  // 0-59
+    rtc_ctime.tm_sec  = 0;   // 0-61
+    //
+    rtc_ctime.tm_yday  = 0;  // 0-365
+    rtc_ctime.tm_wday  = 0;  // 0-6
+    rtc_ctime.tm_isdst = 0;  // Daylight saving flag
+    
+    ret = rtc.set_time(&rtc_ctime);
+    if (ret) {
+        Serial.println("Set time failed!");
     }
-
-    Serial.print("RTC Time: ");
-
-    // Print date
-    Serial.print(date.month);
-    Serial.print("/");
-    Serial.print(date.day);
-    Serial.print("/");
-    Serial.print(date.year + 2000);
-    Serial.print(" - ");
-    // Print time
-    Serial.print(time.hours);
-    Serial.print(":");
-    Serial.print(time.minutes);
-    Serial.print(":");
-    Serial.println(time.seconds);
 }
 
-void loop() {
-    long current_millis = millis();
-    static long previous_millis = current_millis-5000;
+void loop()  {
+    int ret;
 
-    // Print date/time once every five seconds
-    if (current_millis - previous_millis > 5000) {
-        print_current_date_time();
-        previous_millis = current_millis;
+    delay(1000); // wait a little
+
+    ret = rtc.get_time(&rtc_ctime);
+    if (ret) {
+        Serial.println("get_time failed!");
+    } else {
+        strftime(time_char_buffer, 40, "%F %T", &rtc_ctime);
+        Serial.println(time_char_buffer);
     }
 }

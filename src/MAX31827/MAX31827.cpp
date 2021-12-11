@@ -354,7 +354,7 @@ int MAX31827::set_resolution(resolution_t resolution)
     cfg &= ~MAX31827_F_CFG_CONV_RATE;
     //
     cfg &= ~MAX31827_F_CFG_RESOLUTION;
-    cfg |= SET_BIT_VAL(resolution, MAX31827_F_CFG_RESOLUTION_POS, MAX31827_F_CFG_RESOLUTION);;
+    cfg |= SET_BIT_VAL(resolution, MAX31827_F_CFG_RESOLUTION_POS, MAX31827_F_CFG_RESOLUTION);
 
     ret = write_register(MAX31827_R_CFG, cfg);
 
