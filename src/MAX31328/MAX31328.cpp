@@ -138,11 +138,11 @@ int MAX31328::get_status(status_t &stat)
         return ret;
     }
 
-    stat.a1f     = GET_BIT_VAL(val8, MAX31328_F_STATUS_A1F_POS,      MAX31328_F_STATUS_A1F);
-    stat.a2f     = GET_BIT_VAL(val8, MAX31328_F_STATUS_A2F_POS,      MAX31328_F_STATUS_A2F);
-    stat.bsy     = GET_BIT_VAL(val8, MAX31328_F_STATUS_BSY_POS,      MAX31328_F_STATUS_BSY);
-    stat.en32kHz = GET_BIT_VAL(val8, MAX31328_F_STATUS_EN32KHZ_POS,  MAX31328_F_STATUS_EN32KHZ);
-    stat.osf     = GET_BIT_VAL(val8, MAX31328_F_STATUS_OSF_POS,      MAX31328_F_STATUS_OSF);
+    stat.bits.a1f     = GET_BIT_VAL(val8, MAX31328_F_STATUS_A1F_POS,      MAX31328_F_STATUS_A1F);
+    stat.bits.a2f     = GET_BIT_VAL(val8, MAX31328_F_STATUS_A2F_POS,      MAX31328_F_STATUS_A2F);
+    stat.bits.bsy     = GET_BIT_VAL(val8, MAX31328_F_STATUS_BSY_POS,      MAX31328_F_STATUS_BSY);
+    stat.bits.en32kHz = GET_BIT_VAL(val8, MAX31328_F_STATUS_EN32KHZ_POS,  MAX31328_F_STATUS_EN32KHZ);
+    stat.bits.osf     = GET_BIT_VAL(val8, MAX31328_F_STATUS_OSF_POS,      MAX31328_F_STATUS_OSF);
 
     return ret;
 }
@@ -152,11 +152,11 @@ int MAX31328::set_status(status_t stat)
     int ret;
     uint8_t val8 = 0;
 
-    val8 |= SET_BIT_VAL(stat.a1f,      MAX31328_F_STATUS_A1F_POS,      MAX31328_F_STATUS_A1F);
-    val8 |= SET_BIT_VAL(stat.a2f,      MAX31328_F_STATUS_A2F_POS,      MAX31328_F_STATUS_A2F);
-    val8 |= SET_BIT_VAL(stat.bsy,      MAX31328_F_STATUS_BSY_POS,      MAX31328_F_STATUS_BSY);
-    val8 |= SET_BIT_VAL(stat.en32kHz,  MAX31328_F_STATUS_EN32KHZ_POS,  MAX31328_F_STATUS_EN32KHZ);
-    val8 |= SET_BIT_VAL(stat.osf,      MAX31328_F_STATUS_OSF_POS,      MAX31328_F_STATUS_OSF);
+    val8 |= SET_BIT_VAL(stat.bits.a1f,     MAX31328_F_STATUS_A1F_POS,      MAX31328_F_STATUS_A1F);
+    val8 |= SET_BIT_VAL(stat.bits.a2f,     MAX31328_F_STATUS_A2F_POS,      MAX31328_F_STATUS_A2F);
+    val8 |= SET_BIT_VAL(stat.bits.bsy,     MAX31328_F_STATUS_BSY_POS,      MAX31328_F_STATUS_BSY);
+    val8 |= SET_BIT_VAL(stat.bits.en32kHz, MAX31328_F_STATUS_EN32KHZ_POS,  MAX31328_F_STATUS_EN32KHZ);
+    val8 |= SET_BIT_VAL(stat.bits.osf,     MAX31328_F_STATUS_OSF_POS,      MAX31328_F_STATUS_OSF);
 
     ret = write_register(MAX31328_R_STATUS, &val8);
 
@@ -173,13 +173,13 @@ int MAX31328::get_configuration(reg_cfg_t &cfg)
         return ret;
     }
 
-    cfg.a1ie  =                  GET_BIT_VAL(val8, MAX31328_F_CTRL_A1IE_POS,   MAX31328_F_CTRL_A1IE);
-    cfg.a2ie  =                  GET_BIT_VAL(val8, MAX31328_F_CTRL_A2IE_POS,   MAX31328_F_CTRL_A2IE);
-    cfg.incn  =                  GET_BIT_VAL(val8, MAX31328_F_CTRL_INTCN_POS,  MAX31328_F_CTRL_INTCN);
-    cfg.rs    = (sqw_out_freq_t) GET_BIT_VAL(val8, MAX31328_F_CTRL_RS_POS,     MAX31328_F_CTRL_RS);
-    cfg.conv  =                  GET_BIT_VAL(val8, MAX31328_F_CTRL_CONV_POS,   MAX31328_F_CTRL_CONV);
-    cfg.bbrsq =                  GET_BIT_VAL(val8, MAX31328_F_CTRL_BBSQW_POS,  MAX31328_F_CTRL_BBSQW);
-    cfg.eosc  =                  GET_BIT_VAL(val8, MAX31328_F_CTRL_EOSC_POS,   MAX31328_F_CTRL_EOSC);
+    cfg.bits.a1ie  = GET_BIT_VAL(val8, MAX31328_F_CTRL_A1IE_POS,   MAX31328_F_CTRL_A1IE);
+    cfg.bits.a2ie  = GET_BIT_VAL(val8, MAX31328_F_CTRL_A2IE_POS,   MAX31328_F_CTRL_A2IE);
+    cfg.bits.intcn = GET_BIT_VAL(val8, MAX31328_F_CTRL_INTCN_POS,  MAX31328_F_CTRL_INTCN);
+    cfg.bits.rs    = GET_BIT_VAL(val8, MAX31328_F_CTRL_RS_POS,     MAX31328_F_CTRL_RS);
+    cfg.bits.conv  = GET_BIT_VAL(val8, MAX31328_F_CTRL_CONV_POS,   MAX31328_F_CTRL_CONV);
+    cfg.bits.bbsqw = GET_BIT_VAL(val8, MAX31328_F_CTRL_BBSQW_POS,  MAX31328_F_CTRL_BBSQW);
+    cfg.bits.eosc  = GET_BIT_VAL(val8, MAX31328_F_CTRL_EOSC_POS,   MAX31328_F_CTRL_EOSC);
 
     return ret;
 }
@@ -189,13 +189,13 @@ int MAX31328::set_configuration(reg_cfg_t cfg)
     int ret;
     uint8_t val8 = 0;
 
-    val8 |= SET_BIT_VAL(cfg.a1ie,  MAX31328_F_CTRL_A1IE_POS,   MAX31328_F_CTRL_A1IE);
-    val8 |= SET_BIT_VAL(cfg.a2ie,  MAX31328_F_CTRL_A2IE_POS,   MAX31328_F_CTRL_A2IE);
-    val8 |= SET_BIT_VAL(cfg.incn,  MAX31328_F_CTRL_INTCN_POS,  MAX31328_F_CTRL_INTCN);
-    val8 |= SET_BIT_VAL(cfg.rs,    MAX31328_F_CTRL_RS_POS,     MAX31328_F_CTRL_RS);
-    val8 |= SET_BIT_VAL(cfg.conv,  MAX31328_F_CTRL_CONV_POS,   MAX31328_F_CTRL_CONV);
-    val8 |= SET_BIT_VAL(cfg.bbrsq, MAX31328_F_CTRL_BBSQW_POS,  MAX31328_F_CTRL_BBSQW);
-    val8 |= SET_BIT_VAL(cfg.eosc,  MAX31328_F_CTRL_EOSC_POS,   MAX31328_F_CTRL_EOSC);
+    val8 |= SET_BIT_VAL(cfg.bits.a1ie,  MAX31328_F_CTRL_A1IE_POS,   MAX31328_F_CTRL_A1IE);
+    val8 |= SET_BIT_VAL(cfg.bits.a2ie,  MAX31328_F_CTRL_A2IE_POS,   MAX31328_F_CTRL_A2IE);
+    val8 |= SET_BIT_VAL(cfg.bits.intcn, MAX31328_F_CTRL_INTCN_POS,  MAX31328_F_CTRL_INTCN);
+    val8 |= SET_BIT_VAL(cfg.bits.rs,    MAX31328_F_CTRL_RS_POS,     MAX31328_F_CTRL_RS);
+    val8 |= SET_BIT_VAL(cfg.bits.conv,  MAX31328_F_CTRL_CONV_POS,   MAX31328_F_CTRL_CONV);
+    val8 |= SET_BIT_VAL(cfg.bits.bbsqw, MAX31328_F_CTRL_BBSQW_POS,  MAX31328_F_CTRL_BBSQW);
+    val8 |= SET_BIT_VAL(cfg.bits.eosc,  MAX31328_F_CTRL_EOSC_POS,   MAX31328_F_CTRL_EOSC);
 
     ret = write_register(MAX31328_R_CONTROL, &val8);
 

@@ -77,23 +77,31 @@ class MAX31328
             SQW_OUT_FREQ_32KHZ = 3,  // 32.768kHz
         } sqw_out_freq_t;
 
-        typedef struct {
-            bool a1f; 
-            bool a2f;
-            bool bsy;
-            bool en32kHz;
-            bool osf;
+         typedef union {
+            uint8_t raw;
+            struct {
+                uint8_t a1f     : 1;
+                uint8_t a2f     : 1;
+                uint8_t bsy     : 1;
+                uint8_t en32kHz : 1;
+                uint8_t         : 3; // not used
+                uint8_t osf     : 1; 
+            } bits;
         } status_t;
 
-        typedef struct {
-            bool            a1ie; // Alarm 1 interrupt enable
-            bool            a2ie; // Alarm 2 interrupt enable
-            bool            incn; // Interrupt Control
-            sqw_out_freq_t  rs;   // SQW Frequency Select
-            bool            conv; // Temperature Conversion
-            bool            bbrsq;// Battery-backed square-wave enable
-            bool            eosc; // Enable Oscillator Oscillator is always enabled when part is running on VCC.
+        typedef union {
+            uint8_t raw;
+            struct {
+                uint8_t a1ie   : 1;
+                uint8_t a2ie   : 1;
+                uint8_t intcn  : 1;
+                uint8_t rs     : 2;
+                uint8_t conv   : 1; 
+                uint8_t bbsqw  : 1;
+                uint8_t eosc   : 1; 
+            } bits;
         } reg_cfg_t;
+
 
         MAX31328(TwoWire *i2c, uint8_t i2c_addr=MAX3128_I2C_ADDRESS);
         
