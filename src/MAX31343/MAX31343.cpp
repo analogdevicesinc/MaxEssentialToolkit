@@ -34,160 +34,216 @@
 #include <MAX31343/MAX31343.h>
 #include <stdarg.h>
 
-#define pr_err(fmt, ...) if(1) printf(fmt " (%s:%d)\r\n", ## __VA_ARGS__, __func__, __LINE__)
-#define pr_debug(fmt, ...) if(0) printf(fmt " (%s:%d)\r\n", ## __VA_ARGS__, __func__, __LINE__)
+
+#define GET_BIT_VAL(val, pos, mask)     ( ( (val) & mask) >> pos )
+#define SET_BIT_VAL(val, pos, mask)     ( ( ((int)val) << pos) & mask )
 
 #define BCD2BIN(val) (((val) & 15) + ((val) >> 4) * 10)
 #define BIN2BCD(val) ((((val) / 10) << 4) + (val) % 10)
 
-#define POST_INTR_WORK_SIGNAL_ID			0x1
 
-#define TRICKLE_ENABLE_CODE					0x5
 
-/*
-	typedef struct {
-		uint8_t config_reg1;
-		uint8_t config_reg2;
-		uint8_t int_ploarity_config;
-		uint8_t timer_config;
-		uint8_t int_en_reg;
-		uint8_t int_status_reg;
-		uint8_t seconds;
-		uint8_t minutes;
-		uint8_t hours;
-		uint8_t day;
-		uint8_t date;
-		uint8_t month;
-		uint8_t year;
-		uint8_t alm1_sec;
-		uint8_t alm1_min;
-		uint8_t alm1_hrs;
-		uint8_t alm1day_date;
-		uint8_t alm1_mon;
-		uint8_t alm1_year;
-		uint8_t alm2_min;
-		uint8_t alm2_hrs;
-		uint8_t alm2day_date;
-		uint8_t timer_count;
-		uint8_t timer_init;
-		uint8_t ram_start;
-		uint8_t ram_end;
-		uint8_t pwr_mgmt_reg;
-		uint8_t trickle_reg;
-		uint8_t clock_sync_delay;
-		uint8_t temp_msb;
-		uint8_t temp_lsb;
-		uint8_t ts_config;
-	} regmap_t;
-*/
+int MAX31343::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
+{
+    int ret;
+    int counter = 0;
 
+    m_i2c->beginTransmission(m_slave_addr);
+    m_i2c->write(reg);
+
+    /*
+        stop = true, sends a stop message after transmission, releasing the I2C bus.
+        
+        stop = false, sends a restart message after transmission. 
+          The bus will not be released, which prevents another master device from transmitting between messages. 
+          This allows one master device to send multiple transmissions while in control.
+    */
+    ret = m_i2c->endTransmission(false);
+    /*
+        0:success
+        1:data too long to fit in transmit buffer
+        2:received NACK on transmit of address
+        3:received NACK on transmit of data
+        4:other error
+    */
+    if (ret != 0) {
+        m_i2c->begin(); // restart
+        return -1;
+    }
+
+    // Read    
+    m_i2c->requestFrom((char)m_slave_addr, (char)len, false);
+
+    while (m_i2c->available()) { // slave may send less than requested
+        buf[counter++] = m_i2c->read(); // receive a byte as character
+    }
+    
+    m_i2c->endTransmission();
+
+    //
+    if (counter != len) {
+        m_i2c->begin(); // restart
+        ret = -1;
+    }
+
+    return ret;
+}
+
+int MAX31343::write_register(uint8_t reg, const uint8_t *buf, uint8_t len/*=1*/)
+{
+    int ret;
+
+    m_i2c->beginTransmission(m_slave_addr);
+    m_i2c->write(reg);
+    m_i2c->write(buf, len);
+    ret = m_i2c->endTransmission();
+    /*
+        0:success
+        1:data too long to fit in transmit buffer
+        2:received NACK on transmit of address
+        3:received NACK on transmit of data
+        4:other error
+    */
+
+    if (ret != 0) {
+        m_i2c->begin(); // restart
+    }
+
+    return ret;
+}
+
+/***********************************************************************************/
 MAX31343::MAX31343(TwoWire *i2c, uint8_t i2c_addr)
 {
 	if (i2c == NULL) {
-		pr_err("i2c object is invalid!");
 		while (1);
 	}
-	i2c_handler = i2c;
+
+	m_i2c = i2c;
 	m_slave_addr = i2c_addr;
 }
 
 void MAX31343::begin(void)
 {
-	i2c_handler->begin();
+	m_i2c->begin();
 
 	sw_reset_release();
-
 	rtc_start();
-
 	irq_disable_all();
 }
 
-int MAX31343::read_register(uint8_t reg, uint8_t *value, uint8_t len)
+int MAX31343::get_status(status_t &stat)
 {
-	int counter = 0;
+    int ret;
+    uint8_t val8;
 
-	if (value == NULL) {
-		pr_err("value is invalid!");
-		return -1;
-	}
+    ret = read_register(MAX31343_R_STATUS, &val8);
+    if (ret) {
+        return ret;
+    }
 
-	i2c_handler->beginTransmission(m_slave_addr);
-	i2c_handler->write(reg);
-	i2c_handler->endTransmission(false);
-	i2c_handler->requestFrom(m_slave_addr, len);
+    stat.bits.a1f    = GET_BIT_VAL(val8, MAX31343_F_STATUS_A1F_POS,      MAX31343_F_STATUS_A1F);
+    stat.bits.a2f    = GET_BIT_VAL(val8, MAX31343_F_STATUS_A2F_POS,      MAX31343_F_STATUS_A2F);
+    stat.bits.tif    = GET_BIT_VAL(val8, MAX31343_F_STATUS_TIF_POS,      MAX31343_F_STATUS_TIF);
+    stat.bits.tsf    = GET_BIT_VAL(val8, MAX31343_F_STATUS_TSF_POS,  	 MAX31343_F_STATUS_TSF);
+    stat.bits.pfail  = GET_BIT_VAL(val8, MAX31343_F_STATUS_PFAIL_POS,    MAX31343_F_STATUS_PFAIL);
+    stat.bits.osf    = GET_BIT_VAL(val8, MAX31343_F_STATUS_OSF_POS,      MAX31343_F_STATUS_OSF);
+    stat.bits.psdect = GET_BIT_VAL(val8, MAX31343_F_STATUS_PSDECT_POS,   MAX31343_F_STATUS_PSDECT);
 
-	while (i2c_handler->available()) { // slave may send less than requested
-		value[counter++] = i2c_handler->read(); // receive a byte as character
-	}
-
-	if(counter == len) {
-		return 0;
-	} else {
-		pr_err("i2c write failed.");
-		return -1;
-	}
+    return ret;
 }
 
-int MAX31343::write_register(uint8_t reg, const uint8_t *value, uint8_t len)
+int MAX31343::get_configuration(reg_cfg_t &cfg)
+{
+    int ret;
+    uint8_t regs[2];
+
+    ret = read_register(MAX31343_R_CFG1, regs, 2);
+    if (ret) {
+        return ret;
+    }
+
+	// configuration byte 1
+    cfg.bits.enosc  	 = GET_BIT_VAL(regs[0], MAX31343_F_CFG1_ENOSC_POS,   	 MAX31343_F_CFG1_ENOSC);
+    cfg.bits.i2c_timeout = GET_BIT_VAL(regs[0], MAX31343_F_CFG1_I2C_TIMEOUT_POS, MAX31343_F_CFG1_I2C_TIMEOUT);
+    cfg.bits.data_ret  	 = GET_BIT_VAL(regs[0], MAX31343_F_CFG1_DATA_RET_POS,    MAX31343_F_CFG1_DATA_RET);
+    // configuration byte 2
+    cfg.bits.sqw_hz  	 = GET_BIT_VAL(regs[1], MAX31343_F_CFG2_SQW_HZ_POS,   MAX31343_F_CFG2_SQW_HZ);
+    cfg.bits.clko_hz	 = GET_BIT_VAL(regs[1], MAX31343_F_CFG2_CLKO_HZ_POS,  MAX31343_F_CFG2_CLKO_HZ);
+    cfg.bits.enclko	 	 = GET_BIT_VAL(regs[1], MAX31343_F_CFG2_ENCLKO_POS,   MAX31343_F_CFG2_ENCLKO);
+   
+    return ret;
+}
+
+int MAX31343::set_configuration(reg_cfg_t cfg)
+{
+    int ret;
+    uint8_t regs[2] = {0, };
+
+    regs[0] |= SET_BIT_VAL(cfg.bits.enosc, 		 MAX31343_F_CFG1_ENOSC_POS,   	  MAX31343_F_CFG1_ENOSC);
+    regs[0] |= SET_BIT_VAL(cfg.bits.i2c_timeout, MAX31343_F_CFG1_I2C_TIMEOUT_POS, MAX31343_F_CFG1_I2C_TIMEOUT);
+    regs[0] |= SET_BIT_VAL(cfg.bits.data_ret, 	 MAX31343_F_CFG1_DATA_RET_POS,    MAX31343_F_CFG1_DATA_RET);
+    // configuration byte 2
+    regs[1] |= SET_BIT_VAL(cfg.bits.sqw_hz,  MAX31343_F_CFG2_SQW_HZ_POS,   MAX31343_F_CFG2_SQW_HZ);
+    regs[1] |= SET_BIT_VAL(cfg.bits.clko_hz, MAX31343_F_CFG2_CLKO_HZ_POS,  MAX31343_F_CFG2_CLKO_HZ);
+    regs[1] |= SET_BIT_VAL(cfg.bits.enclko,  MAX31343_F_CFG2_ENCLKO_POS,   MAX31343_F_CFG2_ENCLKO);
+    
+    ret = write_register(MAX31343_R_CFG1, regs, 2);
+
+    return ret;
+}
+
+int MAX31343::get_time(struct tm *time)
 {
 	int ret;
-	uint8_t *buffer;
+	rtc_time_regs_t regs;
 
-	if (value == NULL) {
-		pr_err("value is invalid!");
+	if (time == NULL) {
 		return -1;
 	}
 
-	i2c_handler->beginTransmission(m_slave_addr);
-	i2c_handler->write(reg);
-	i2c_handler->write(value,len);
-	ret = i2c_handler->endTransmission();
-
-	if (ret != 0) {
-		pr_err("i2c write failed with %d!", ret);
+	ret = read_register(MAX31343_R_SECONDS, (uint8_t *) &regs, sizeof(regs));
+	if (ret) {
+		return ret;
 	}
 
-	return ret;
-}
-
-int MAX31343::rtc_regs_to_time(struct tm *time, const rtc_time_regs_t *regs)
-{
 	/* tm_sec seconds [0,61] */
-	time->tm_sec = BCD2BIN(regs->seconds.bcd.value);
-
+	time->tm_sec = BCD2BIN(regs.seconds.bcd.value);
 	/* tm_min minutes [0,59] */
-	time->tm_min = BCD2BIN(regs->minutes.bcd.value);
-
+	time->tm_min = BCD2BIN(regs.minutes.bcd.value);
 	/* tm_hour hour [0,23] */
-	time->tm_hour = BCD2BIN(regs->hours.bcd.value);
-
+	time->tm_hour = BCD2BIN(regs.hours.bcd.value);
 	/* tm_wday day of week [0,6] (Sunday = 0) */
-	time->tm_wday = BCD2BIN(regs->day.bcd.value) - 1;
-
+	time->tm_wday = BCD2BIN(regs.day.bcd.value) - 1;
 	/* tm_mday day of month [1,31] */
-	time->tm_mday = BCD2BIN(regs->date.bcd.value);
-
+	time->tm_mday = BCD2BIN(regs.date.bcd.value);
 	/* tm_mon month of year [0,11] */
-	time->tm_mon = BCD2BIN(regs->month.bcd.value) - 1;
+	time->tm_mon = BCD2BIN(regs.month.bcd.value) - 1;
 
 	/* tm_year years since 2000 */
-	if (regs->month.bits.century) {
-		time->tm_year = BCD2BIN(regs->year.bcd.value) + 200;
+	if (regs.month.bits.century) {
+		time->tm_year = BCD2BIN(regs.year.bcd.value) + 200;
 	} else {
-		time->tm_year = BCD2BIN(regs->year.bcd.value) + 100;
+		time->tm_year = BCD2BIN(regs.year.bcd.value) + 100;
 	}
 
 	/* tm_yday day of year [0,365] */
 	time->tm_yday = 0; /* TODO */
-
 	/* tm_isdst daylight savings flag */
 	time->tm_isdst = 0; /* TODO */
 
-	return 0;
+	return ret;
 }
 
-int MAX31343::time_to_rtc_regs(rtc_time_regs_t *regs, const struct tm *time)
+int MAX31343::set_time(const struct tm *time)
 {
+	int ret;
+	rtc_time_regs_t regs;
+
+	if (time == NULL) {
+		return -1;
+	}
+
 	/*********************************************************
 	 * +----------+------+---------------------------+-------+
 	 * | Member   | Type | Meaning                   | Range |
@@ -205,72 +261,105 @@ int MAX31343::time_to_rtc_regs(rtc_time_regs_t *regs, const struct tm *time)
 	 * * tm_sec is generally 0-59. The extra range is to accommodate for leap
 	 *   seconds in certain systems.
 	 *********************************************************/
-	regs->seconds.bcd.value = BIN2BCD(time->tm_sec);
-
-	regs->minutes.bcd.value = BIN2BCD(time->tm_min);
-
-	regs->hours.bcd.value= BIN2BCD(time->tm_hour);
-
-	regs->day.bcd.value = BIN2BCD(time->tm_wday + 1);
-
-	regs->date.bcd.value = BIN2BCD(time->tm_mday);
-
-	regs->month.bcd.value = BIN2BCD(time->tm_mon + 1);
+	regs.seconds.bcd.value = BIN2BCD(time->tm_sec);
+	regs.minutes.bcd.value = BIN2BCD(time->tm_min);
+	regs.hours.bcd.value= BIN2BCD(time->tm_hour);
+	regs.day.bcd.value = BIN2BCD(time->tm_wday + 1);
+	regs.date.bcd.value = BIN2BCD(time->tm_mday);
+	regs.month.bcd.value = BIN2BCD(time->tm_mon + 1);
 
 	if (time->tm_year >= 200) {
-		regs->month.bits.century = 1;
-		regs->year.bcd.value = BIN2BCD(time->tm_year - 200);
+		regs.month.bits.century = 1;
+		regs.year.bcd.value = BIN2BCD(time->tm_year - 200);
 	} else if (time->tm_year >= 100) {
-		regs->month.bits.century = 0;
-		regs->year.bcd.value = BIN2BCD(time->tm_year - 100);
+		regs.month.bits.century = 0;
+		regs.year.bcd.value = BIN2BCD(time->tm_year - 100);
 	} else {
-		pr_err("Invalid set year!");
 		return -1;
 	}
 
-	return 0;
+	ret = write_register(MAX31343_R_SECONDS, (const uint8_t *) &regs, sizeof(regs)); 
+
+	return ret;
 }
 
-int MAX31343::get_time(struct tm *time)
+int MAX31343::set_alarm(alarm_no_t alarm_no, const struct tm *alarm_time, alarm_period_t period)
 {
-	rtc_time_regs_t time_regs;
+	int ret;
+	regs_alarm_t regs;
 
-	if (time == NULL) {
-		pr_err("rtc_ctime is invalid!");
-		return -1;
+	if (alarm_no == ALARM2) {
+		switch (period) {
+			case ALARM_PERIOD_EVERYSECOND:
+			case ALARM_PERIOD_ONETIME:
+			case ALARM_PERIOD_YEARLY:
+				return -1; // not support for alarm 2
+		}
 	}
 
-	if (read_register(MAX31343_R_SECONDS_ADDR, (uint8_t *) &time_regs,
-			sizeof(time_regs)) < 0) {
-		pr_err("read time registers failed!");
-		return -1;
+
+	/*
+	 *  Set period
+	 */
+
+	// clear all flag, default onetime 
+	regs.sec.bits.a1m1 = 0;
+	regs.min.bits.a1m2 = 0;
+	regs.hrs.bits.a1m3 = 0;
+	regs.day_date.bits.a1m4 = 0;
+	regs.mon.bits.a1m5 = 0;
+	regs.mon.bits.a1m6 = 0;
+	regs.day_date.bits.dy_dt = 0;
+
+	switch (period) {
+		case ALARM_PERIOD_ONETIME:
+			// do nothing
+			break;
+		case ALARM_PERIOD_YEARLY:
+			regs.mon.bits.a1m6 = 1;
+			break;
+		case ALARM_PERIOD_MONTHLY:
+			regs.mon.bits.a1m5 = 1;
+			regs.mon.bits.a1m6 = 1;
+			break;
+		case ALARM_PERIOD_WEEKLY:
+			regs.mon.bits.a1m5 = 1;
+			regs.mon.bits.a1m6 = 1;
+			regs.day_date.bits.dy_dt = 1;
+			break;
+		case ALARM_PERIOD_DAILY:
+			regs.day_date.bits.a1m4 = 1;
+			regs.mon.bits.a1m5 = 1;
+			regs.mon.bits.a1m6 = 1;
+			break;
+		case ALARM_PERIOD_HOURLY:
+			regs.hrs.bits.a1m3 = 1;
+			regs.day_date.bits.a1m4 = 1;
+			regs.mon.bits.a1m5 = 1;
+			regs.mon.bits.a1m6 = 1;
+			break;
+		case ALARM_PERIOD_EVERYMINUTE:
+			regs.min.bits.a1m2 = 1;
+			regs.hrs.bits.a1m3 = 1;
+			regs.day_date.bits.a1m4 = 1;
+			regs.mon.bits.a1m5 = 1;
+			regs.mon.bits.a1m6 = 1;
+			break;
+		case ALARM_PERIOD_EVERYSECOND:
+			regs.sec.bits.a1m1 = 1;
+			regs.min.bits.a1m2 = 1;
+			regs.hrs.bits.a1m3 = 1;
+			regs.day_date.bits.a1m4 = 1;
+			regs.mon.bits.a1m5 = 1;
+			regs.mon.bits.a1m6 = 1;
+			break;
+		default:
+			return -1;
 	}
 
-	return rtc_regs_to_time(time, &time_regs);
-}
-
-int MAX31343::set_time(const struct tm *time)
-{
-	rtc_time_regs_t time_regs;
-
-	if (time == NULL) {
-		pr_err("rtc_ctime is invalid!");
-		return -1;
-	}
-
-	time_to_rtc_regs(&time_regs, time);
-
-	if (write_register(MAX31343_R_SECONDS_ADDR, (const uint8_t *) &time_regs,
-			sizeof(time_regs)) < 0) {
-		pr_err("read time registers failed!");
-		return -1;
-	}
-
-	return 0;
-}
-
-int MAX31343::time_to_alarm_regs(alarm_regs_t &regs, const struct tm *alarm_time)
-{
+	/* 
+	 * Convert time structure to alarm registers 
+	 */
 	regs.sec.bcd.value = BIN2BCD(alarm_time->tm_sec);
 	regs.min.bcd.value = BIN2BCD(alarm_time->tm_min);
 
@@ -290,201 +379,66 @@ int MAX31343::time_to_alarm_regs(alarm_regs_t &regs, const struct tm *alarm_time
 	} else if (alarm_time->tm_year >= 100) {
 		regs.year.bcd.value = BIN2BCD(alarm_time->tm_year - 100);
 	} else {
-		pr_err("Invalid set year!");
 		return -1;
 	}
 
-	return 0;
-}
 
-int MAX31343::alarm_regs_to_time(struct tm *alarm_time, const alarm_regs_t *regs)
-{
-	alarm_time->tm_sec = BCD2BIN(regs->sec.bcd.value);
-	alarm_time->tm_min = BCD2BIN(regs->min.bcd.value);
-	alarm_time->tm_hour = BCD2BIN(regs->hrs.bcd.value);
+    /* 
+     *  Write Registers 
+     */
+    uint8_t *ptr_regs = (uint8_t *)&regs;
 
-	if (regs->day_date.bits.dy_dt == 0) { /* date */
-		alarm_time->tm_mday = BCD2BIN(regs->day_date.bcd_date.value);
-	} else { /* day */
-		alarm_time->tm_wday = BCD2BIN(regs->day_date.bcd_day.value);
-	}
+    if (alarm_no == ALARM1) {
+        ret = write_register(MAX31343_R_ALM1_SEC, &ptr_regs[0], sizeof(regs_alarm_t));
+    } else {
+        /* XXX discard min, mon & sec registers */
+        ret = write_register(MAX31343_R_ALM2_MIN, &ptr_regs[1], sizeof(regs_alarm_t)-3);
+    }
 
-	alarm_time->tm_mon = BCD2BIN(regs->mon.bcd.value) - 1;
-
-	alarm_time->tm_year = BCD2BIN(regs->year.bcd.value) + 100;	/* XXX no century bit */
-
-	return 0;
-}
-
-int MAX31343::set_alarm_period(alarm_no_t alarm_no, alarm_regs_t &regs, alarm_period_t period)
-{
-	switch (period) {
-	case ALARM_PERIOD_ONETIME:
-		if (alarm_no == ALARM2) { /* not supported! */
-			return -1;
-		}
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 0;
-		regs.hrs.bits.a1m3 = 0;
-		regs.day_date.bits.a1m4 = 0;
-		regs.mon.bits.a1m5 = 0;
-		regs.mon.bits.a1m6 = 0;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	case ALARM_PERIOD_YEARLY:
-		if (alarm_no == ALARM2) { /* not supported! */
-			return -1;
-		}
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 0;
-		regs.hrs.bits.a1m3 = 0;
-		regs.day_date.bits.a1m4 = 0;
-		regs.mon.bits.a1m5 = 0;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	case ALARM_PERIOD_MONTHLY:
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 0;
-		regs.hrs.bits.a1m3 = 0;
-		regs.day_date.bits.a1m4 = 0;
-		regs.mon.bits.a1m5 = 1;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	case ALARM_PERIOD_WEEKLY:
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 0;
-		regs.hrs.bits.a1m3 = 0;
-		regs.day_date.bits.a1m4 = 0;
-		regs.mon.bits.a1m5 = 1;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 1;
-		break;
-	case ALARM_PERIOD_DAILY:
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 0;
-		regs.hrs.bits.a1m3 = 0;
-		regs.day_date.bits.a1m4 = 1;
-		regs.mon.bits.a1m5 = 1;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	case ALARM_PERIOD_HOURLY:
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 0;
-		regs.hrs.bits.a1m3 = 1;
-		regs.day_date.bits.a1m4 = 1;
-		regs.mon.bits.a1m5 = 1;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	case ALARM_PERIOD_EVERYMINUTE:
-		regs.sec.bits.a1m1 = 0;
-		regs.min.bits.a1m2 = 1;
-		regs.hrs.bits.a1m3 = 1;
-		regs.day_date.bits.a1m4 = 1;
-		regs.mon.bits.a1m5 = 1;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	case ALARM_PERIOD_EVERYSECOND:
-		if ((alarm_no == ALARM2) && (period == ALARM_PERIOD_EVERYSECOND)) {
-			return -1; /* Alarm2 does not support "once per second" alarm*/
-		}
-		regs.sec.bits.a1m1 = 1;
-		regs.min.bits.a1m2 = 1;
-		regs.hrs.bits.a1m3 = 1;
-		regs.day_date.bits.a1m4 = 1;
-		regs.mon.bits.a1m5 = 1;
-		regs.mon.bits.a1m6 = 1;
-		regs.day_date.bits.dy_dt = 0;
-		break;
-	default:
-		return -1;
-	}
-
-	return 0;
-}
-
-int MAX31343::set_alarm_regs(alarm_no_t alarm_no, const alarm_regs_t *regs)
-{
-	uint8_t *ptr_regs = (uint8_t *)regs;
-	uint8_t off = 0;
-	uint8_t dev_ba;
-	uint8_t len = sizeof(alarm_regs_t);
-
-	if (alarm_no == ALARM1) {
-		dev_ba = MAX31343_R_ALM1_SEC_ADDR;
-	} else {
-		dev_ba = MAX31343_R_ALM2_MIN_ADDR;
-		off = 1;	/* starts from min register */
-		len -= 3;	/* XXX discard min, mon & sec registers */
-	}
-
-	return write_register(dev_ba, &ptr_regs[off], len);
-}
-
-int MAX31343::get_alarm_regs(alarm_no_t alarm_no, alarm_regs_t *regs)
-{
-	uint8_t *ptr_regs = (uint8_t *)regs;
-	uint8_t off = 0;
-	uint8_t dev_ba;
-	uint8_t len = sizeof(alarm_regs_t);
-
-	if (alarm_no == ALARM1) {
-		dev_ba = MAX31343_R_ALM1_SEC_ADDR;
-	} else {
-		regs->sec.raw = 0;	/* zeroise second register for alarm2 */
-		dev_ba = MAX31343_R_ALM2_MIN_ADDR;
-		off = 1;	/* starts from min register (no sec register) */
-		len -= 2;	/* XXX discard mon & sec registers */
-	}
-
-	return read_register(dev_ba, &ptr_regs[off], len);
-}
-
-int MAX31343::set_alarm(alarm_no_t alarm_no, const struct tm *alarm_time, alarm_period_t period)
-{
-	int ret;
-	alarm_regs_t regs;
-
-	ret = set_alarm_period(alarm_no, regs, period);
-	if (ret) {
-		return ret;
-	}
-
-	/* Convert time structure to alarm registers */
-	ret = time_to_alarm_regs(regs, alarm_time);
-	if (ret) {
-		return ret;
-	}
-
-	ret = set_alarm_regs(alarm_no, &regs);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period_t *period, bool *is_enabled)
 {
 	int ret;
-	alarm_regs_t regs;
+	regs_alarm_t regs;
 	uint8_t reg;
+    uint8_t *ptr_regs = (uint8_t *)&regs;
 
-	ret = get_alarm_regs(alarm_no, &regs);
-	if (ret) {
-		return ret;
+    /*
+     *  Read registers
+     */
+    if (alarm_no == ALARM1) {
+        ret = read_register(MAX31343_R_ALM1_SEC, &ptr_regs[0], sizeof(regs_alarm_t));
+    } else {
+        regs.sec.raw = 0;  /* zeroise second register for alarm2 */
+        /* XXX discard mon & sec registers */
+        ret = read_register(MAX31343_R_ALM2_MIN, &ptr_regs[1], sizeof(regs_alarm_t)-2);
+    }
+    if (ret) {
+        return ret;
+    }
+
+
+    /* 
+     *  Convert alarm registers to time structure 
+     */
+	alarm_time->tm_sec = BCD2BIN(regs.sec.bcd.value);
+	alarm_time->tm_min = BCD2BIN(regs.min.bcd.value);
+	alarm_time->tm_hour = BCD2BIN(regs.hrs.bcd.value);
+
+	if (regs.day_date.bits.dy_dt == 0) { /* date */
+		alarm_time->tm_mday = BCD2BIN(regs.day_date.bcd_date.value);
+	} else { /* day */
+		alarm_time->tm_wday = BCD2BIN(regs.day_date.bcd_day.value);
 	}
+	alarm_time->tm_mon = BCD2BIN(regs.mon.bcd.value) - 1;
+	alarm_time->tm_year = BCD2BIN(regs.year.bcd.value) + 100;	/* XXX no century bit */
 
-	/* Convert alarm registers to time structure */
-	ret = alarm_regs_to_time(alarm_time, &regs);
-	if (ret) {
-		return ret;
-	}
 
+    /*
+     *  Find period
+     */
     if(alarm_no == ALARM1) {
         int alarm = regs.sec.bits.a1m1 | (regs.min.bits.a1m2<<1)
                     | (regs.hrs.bits.a1m3<<2) | (regs.day_date.bits.a1m4<<3)
@@ -546,7 +500,10 @@ int MAX31343::get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period
         }
     }
 
-	ret = read_register(MAX31343_R_INT_EN_REG_ADDR, (uint8_t *)&reg, 1);
+    /*
+     *  Get enable status
+     */
+	ret = read_register(MAX31343_R_INT_EN, (uint8_t *)&reg, 1);
 	if (ret) {
 		return ret;
 	}
@@ -557,429 +514,354 @@ int MAX31343::get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period
 		*is_enabled = (reg & (1 << INTR_ID_ALARM2)) != 0;
 	}
 
-	return 0;
+	return ret;
 }
 
 int MAX31343::powerfail_threshold_level(comp_thresh_t th)
 {
 	int ret;
-	pwr_mgmt_reg_t reg;
+	uint8_t reg;
 
-	ret = read_register(MAX31343_R_PWR_MGMT_REG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_PWR_MGMT, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.pfvt = th;
+	reg &= ~MAX31343_F_PWR_MGMT_PFVT;
+	reg |= SET_BIT_VAL(th, MAX31343_F_PWR_MGMT_PFVT_POS, MAX31343_F_PWR_MGMT_PFVT);
+	
+	ret = write_register(MAX31343_R_PWR_MGMT, &reg, 1);
 
-	ret = write_register(MAX31343_R_PWR_MGMT_REG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::supply_select(power_mgmt_supply_t supply)
 {
 	int ret;
-	pwr_mgmt_reg_t reg;
+	uint8_t reg;
 
-	ret = read_register(MAX31343_R_PWR_MGMT_REG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_PWR_MGMT, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
 	switch (supply) {
 	case POW_MGMT_SUPPLY_SEL_VCC:
-		reg.bits.d_man_sel = 1;
-		reg.bits.d_vback_sel = 0;
+		reg |= MAX31343_F_PWR_MGMT_DMAN_SEL;
+		reg &= ~MAX31343_F_PWR_MGMT_D_VBACK_SEL;
 		break;
 	case POW_MGMT_SUPPLY_SEL_VBACK:
-		reg.bits.d_man_sel = 1;
-		reg.bits.d_vback_sel = 1;
+		reg |= MAX31343_F_PWR_MGMT_DMAN_SEL;
+		reg |= MAX31343_F_PWR_MGMT_D_VBACK_SEL;
 		break;
 	case POW_MGMT_SUPPLY_SEL_AUTO:
 	default:
-		reg.bits.d_man_sel = 0;
+		reg &= ~MAX31343_F_PWR_MGMT_DMAN_SEL;
 		break;
 	}
 
-	ret = write_register(MAX31343_R_PWR_MGMT_REG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_PWR_MGMT, &reg, 1);
 
-	return 0;
+	return ret;
 }
 
 int MAX31343::trickle_charger_enable(trickle_charger_path_t path)
 {
     int ret;
-    struct {
-        unsigned char path     : 4;
-        unsigned char tche     : 4;
-    } reg;
+    uint8_t reg = 0;
 
-	ret = read_register(MAX31343_R_TRICKLE_REG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
+    // 0x5 is trickle enable code
+	reg |= SET_BIT_VAL(5, MAX31343_F_TRICKLE_TCHE_POS, MAX31343_F_TRICKLE_TCHE);
+	reg |= SET_BIT_VAL(path, MAX31343_F_TRICKLE_D_TRICKLE_POS, MAX31343_F_TRICKLE_D_TRICKLE);
 
-    reg.tche = TRICKLE_ENABLE_CODE;
-    reg.path = path;
+	ret = write_register(MAX31343_R_TRICKLE, (uint8_t *)&reg, 1);
 
-	ret = write_register(MAX31343_R_TRICKLE_REG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::trickle_charger_disable()
 {
     int ret;
-    struct {
-        unsigned char path     : 4;
-        unsigned char tche     : 4;
-    } reg;
-
-
-	ret = read_register(MAX31343_R_TRICKLE_REG_ADDR, (uint8_t *)&reg, 1);
+    uint8_t reg;
+    
+	ret = read_register(MAX31343_R_TRICKLE, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.tche = 0;
+	reg &= ~MAX31343_F_TRICKLE_TCHE;
+	ret = write_register(MAX31343_R_TRICKLE, &reg, 1);
 
-	ret = write_register(MAX31343_R_TRICKLE_REG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
-int MAX31343::set_output_square_wave_frequency(square_wave_out_freq_t freq)
+int MAX31343::set_square_wave_frequency(sqw_out_freq_t freq)
 {
 	int ret;
-	config_reg2_t reg;
+	uint8_t cfg2;
 
-	ret = read_register(MAX31343_R_CONFIG_REG2_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_CFG2, &cfg2, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.sqw_hz = freq;
+	cfg2 &= ~MAX31343_F_CFG2_SQW_HZ;
+	cfg2 |= SET_BIT_VAL(freq, MAX31343_F_CFG2_SQW_HZ_POS, MAX31343_F_CFG2_SQW_HZ);
+	
+	ret = write_register(MAX31343_R_CFG2, &cfg2, 1);
 
-	ret = write_register(MAX31343_R_CONFIG_REG2_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::clko_enable(clko_freq_t freq)
 {
 	int ret;
-	config_reg2_t cfg2;
+	uint8_t cfg2;
 
-	ret = read_register(MAX31343_R_CONFIG_REG2_ADDR, (uint8_t *)&cfg2, 1);
+	ret = read_register(MAX31343_R_CFG2, (uint8_t *)&cfg2, 1);
 	if (ret) {
 		return ret;
 	}
 
-	cfg2.bits.enclko = 1;
-	cfg2.bits.clko_hz = freq;
+	cfg2 |= MAX31343_F_CFG2_ENCLKO;
+	//
+	cfg2 &= ~MAX31343_F_CFG2_CLKO_HZ;
+	cfg2 |= SET_BIT_VAL(freq, MAX31343_F_CFG2_CLKO_HZ_POS, MAX31343_F_CFG2_CLKO_HZ);
 
-	ret = write_register(MAX31343_R_CONFIG_REG2_ADDR, (uint8_t *)&cfg2, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_CFG2, &cfg2, 1);
 
-	return 0;
+	return ret;
 }
 
 int MAX31343::clko_disable()
 {
 	int ret;
-	config_reg2_t cfg2;
+	uint8_t cfg2;
 
-	ret = read_register(MAX31343_R_CONFIG_REG2_ADDR, (uint8_t *)&cfg2, 1);
+	ret = read_register(MAX31343_R_CFG2, &cfg2, 1);
 	if (ret) {
 		return ret;
 	}
 
-	cfg2.bits.enclko = 0;
+	cfg2 &= ~MAX31343_F_CFG2_ENCLKO;
+	ret = write_register(MAX31343_R_CFG2, &cfg2, 1);
 
-	ret = write_register(MAX31343_R_CONFIG_REG2_ADDR, (uint8_t *)&cfg2, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
-int MAX31343::timer_init(uint8_t value, bool repeat, timer_freq_t freq)
+int MAX31343::timer_init(uint8_t initial_value, bool repeat, timer_freq_t freq)
 {
 	int ret;
-	timer_config_t reg_cfg;
+	uint8_t cfg;
 
-	ret = read_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg_cfg, 1);
+	ret = read_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg_cfg.bits.te = 0; /* timer is reset */
-	reg_cfg.bits.tpause = 1; /* timer is paused */
-	reg_cfg.bits.trpt = repeat ? 1 : 0;	/* Timer repeat mode */
-	reg_cfg.bits.tfs = freq;	/* Timer frequency */
+	cfg &= ~MAX31343_F_TIMER_CONFIG_TE; /* timer is reset */
+	cfg |= MAX31343_F_TIMER_CONFIG_TPAUSE; /* timer is paused */
+	/* Timer repeat mode */
+	if (repeat) {
+		cfg |= MAX31343_F_TIMER_CONFIG_TRPT;
+	} else {
+		cfg &= ~MAX31343_F_TIMER_CONFIG_TRPT;
+	}
+	cfg &= ~MAX31343_F_TIMER_CONFIG_TFS;
+	cfg |= SET_BIT_VAL(freq, MAX31343_F_TIMER_CONFIG_TFS_POS, MAX31343_F_TIMER_CONFIG_TFS);
 
-	ret = write_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg_cfg, 1);
+	ret = write_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	ret = write_register(MAX31343_R_TIMER_INIT_ADDR, (uint8_t *)&value, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_TIMER_INIT, &initial_value, 1);
 
-	return 0;
+	return ret;
 }
 
-uint8_t MAX31343::timer_get()
+int MAX31343::timer_get(uint8_t &val)
 {
 	int ret;
 	uint8_t reg;
 
-	ret = read_register(MAX31343_R_TIMER_COUNT_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_TIMER_COUNT, (uint8_t *)&reg, 1);
 	if (ret) {
-		return (uint8_t) - 1;
+		return ret;
 	}
+	val = reg;
 
-	return reg;
+	return ret;
 }
 
 int MAX31343::timer_start()
 {
 	int ret;
-	timer_config_t reg;
+	uint8_t cfg;
 
-	ret = read_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 1;
-	reg.bits.tpause = 0;
+	cfg |= MAX31343_F_TIMER_CONFIG_TE;
+	cfg &= ~MAX31343_F_TIMER_CONFIG_TPAUSE;
 
-	ret = write_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 
-	return 0;
+	return ret;
 }
 
 int MAX31343::timer_pause()
 {
 	int ret;
-	timer_config_t reg;
+	uint8_t cfg;
 
-	ret = read_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 1;
-	reg.bits.tpause = 1;
+	cfg |= MAX31343_F_TIMER_CONFIG_TE;
+	cfg |= MAX31343_F_TIMER_CONFIG_TPAUSE;
 
-	ret = write_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 
-	return 0;
+	return ret;
 }
 
 int MAX31343::timer_continue()
 {
 	int ret;
-	timer_config_t reg;
+	uint8_t cfg;
 
-	ret = read_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 1;
-	reg.bits.tpause = 0;
+	cfg |= MAX31343_F_TIMER_CONFIG_TE;
+	cfg &= ~MAX31343_F_TIMER_CONFIG_TPAUSE;
 
-	ret = write_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 
-	return 0;
+	return ret;
 }
 
 int MAX31343::timer_stop()
 {
 	int ret;
-	timer_config_t reg;
+	uint8_t cfg;
 
-	ret = read_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 0;
-	reg.bits.tpause = 1;
+	cfg &= ~MAX31343_F_TIMER_CONFIG_TE;
+	cfg |= MAX31343_F_TIMER_CONFIG_TPAUSE;
 
-	ret = write_register(MAX31343_R_TIMER_CONFIG_ADDR, (uint8_t *)&reg, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_TIMER_CONFIG, &cfg, 1);
 
-	return 0;
+	return ret;
 }
 
-int MAX31343::data_retention_mode_config(int state)
+int MAX31343::set_data_retention_mode(bool enable)
 {
 	int ret;
-	config_reg1_t cfg1;
+	uint8_t cfg1;
 
-	ret = read_register(MAX31343_R_CONFIG_REG1_ADDR, (uint8_t *)&cfg1, 1);
+	ret = read_register(MAX31343_R_CFG1, &cfg1, 1);
 	if (ret) {
 		return ret;
 	}
 
-	if (state) {
-		cfg1.bits.enosc = 0;
-		cfg1.bits.data_reten = 1;
+	if (enable) {
+		cfg1 &= ~MAX31343_F_CFG1_ENOSC;
+		cfg1 |= MAX31343_F_CFG1_DATA_RET;
 	} else {
-		cfg1.bits.enosc = 1;
-		cfg1.bits.data_reten = 0;
+		cfg1 |= MAX31343_F_CFG1_ENOSC;
+		cfg1 &= ~MAX31343_F_CFG1_DATA_RET;
 	}
 
-	ret = write_register(MAX31343_R_CONFIG_REG1_ADDR, (uint8_t *)&cfg1, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_CFG1, &cfg1, 1);
 
-	return 0;
+	return ret;
 }
 
-int MAX31343::data_retention_mode_enter()
-{
-	return data_retention_mode_config(1);
-}
-
-int MAX31343::data_retention_mode_exit()
-{
-	return data_retention_mode_config(0);
-}
-
-int MAX31343::i2c_timeout_config(int enable)
+int MAX31343::start_temp_conversion(bool automode/*=false*/, ttsint_t interval/*=TTS_INTERNAL_1SEC*/)
 {
 	int ret;
-	config_reg1_t cfg1;
+	uint8_t reg;
 
-	ret = read_register(MAX31343_R_CONFIG_REG1_ADDR, (uint8_t *)&cfg1, 1);
-	if (ret) {
-		return ret;
-	}
-
-	cfg1.bits.i2c_timeout = (enable) ? 1 : 0;
-
-	ret = write_register(MAX31343_R_CONFIG_REG1_ADDR, (uint8_t *)&cfg1, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
-}
-
-int MAX31343::i2c_timeout_enable()
-{
-	return i2c_timeout_config(1);
-}
-
-int MAX31343::i2c_timeout_disable()
-{
-	return i2c_timeout_config(0);
-}
-
-int MAX31343::read_temp(float *temp)
-{
-	int ret;
-	uint8_t regs[2];
-	ts_config_t cfg_reg;
-	int itemp;
-
-	ret = read_register(MAX31343_R_TS_CONFIG_ADDR, (uint8_t *)&cfg_reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	if (cfg_reg.bits.automode) { /* manual mode */
-		/* trigger temperature reading */
-		cfg_reg.bits.oneshotmode = 1;
-
-		ret = write_register(MAX31343_R_TS_CONFIG_ADDR, (uint8_t *)&cfg_reg, 1);
-		if (ret) {
-			return ret;
-		}
-
-		while (cfg_reg.bits.oneshotmode) {
-			ret = read_register(MAX31343_R_TS_CONFIG_ADDR, (uint8_t *)&cfg_reg, 1);
-			if (ret) {
-				return ret;
-			}
-		}
-	}
-
-	ret = read_register(MAX31343_R_TEMP_MSB_ADDR, regs, 2);
-	if (ret) {
-		return ret;
-	}
-
-	itemp = ((regs[0] << 2) | (regs[1] >> 6));
-	if (regs[0] & 0x80) { /* if negative */
-		itemp |= -(1 << 10); /* sign extend */
-	}
-
-	*temp = (float)itemp / 4; /* LSB resolution: 0.25 C */
-
-	return 0;
-}
-
-int MAX31343::temp_sensor_config(bool automode, ttsint_t interval)
-{
-	int ret;
-	ts_config_t reg;
-
-	ret = read_register(MAX31343_R_TS_CONFIG_ADDR, (uint8_t *)&reg, 1);
+	ret = read_register(MAX31343_R_TS_CONFIG, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
 	if (automode) {
-		reg.bits.automode = 1;
-		reg.bits.ttint = interval;
+		reg |= MAX31343_F_TS_CONFIG_AUTO_MODE;
+		//
+		reg &= ~MAX31343_F_TS_CONFIG_TTSINT;
+		reg |= SET_BIT_VAL(interval, MAX31343_F_TS_CONFIG_TTSINT_POS, MAX31343_F_TS_CONFIG_TTSINT);
 	} else {
-		reg.bits.automode = 0;
+		reg &= ~MAX31343_F_TS_CONFIG_AUTO_MODE;
+		reg |= MAX31343_F_TS_CONFIG_ONESHOT_MODE;
 	}
 
-	ret = write_register(MAX31343_R_TS_CONFIG_ADDR, (uint8_t *)&reg, 1);
+	ret = write_register(MAX31343_R_TS_CONFIG, &reg, 1);
+
+	return ret;
+}
+
+int MAX31343::is_temp_ready(void)
+{
+    int ret;
+    uint8_t reg;
+
+	ret = read_register(MAX31343_R_TS_CONFIG, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
-	return 0;
+
+    if (reg & MAX31343_F_TS_CONFIG_ONESHOT_MODE) {
+        return MAX31343_ERR_BUSY; // means temperatrue NOT ready
+    } else {
+        return 0; // means temperature ready 
+    }
+
+    return ret;
+}
+
+int MAX31343::get_temperature(float &temp)
+{
+    int ret;
+    uint8_t  buf[2];
+    uint16_t count;
+
+    #define TEMP_RESOLUTION_FOR_10_BIT      (0.25f)
+
+    ret = read_register(MAX31343_R_TEMP_MSB, buf, 2);
+    if (ret) {
+        return ret;
+    }
+
+    // buf[0] includes upper 8 bits, buf[1](7:6 bits) includes lower 2 bits
+    count =(buf[0]<<2) | ( (buf[1]>>6) & 0x03 );
+
+    count &= 0x3FF; // Resolution is 10 bits, mask rest of it
+
+    // convert count to temperature, 10th bit is sign bit
+    if (count & (1<<9) ) {
+        count = (count ^ 0x3FF) + 1;
+        temp  = count * TEMP_RESOLUTION_FOR_10_BIT;
+        temp  = 0 - temp; // convert to negative
+    } else {
+        temp   = count * TEMP_RESOLUTION_FOR_10_BIT;
+    }
+
+    return ret;    
 }
 
 int MAX31343::irq_enable(intr_id_t id)
@@ -987,19 +869,15 @@ int MAX31343::irq_enable(intr_id_t id)
 	int ret;
 	uint8_t reg;
 
-	ret = read_register(MAX31343_R_INT_EN_REG_ADDR, &reg, 1);
+	ret = read_register(MAX31343_R_INT_EN, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
 	reg |= (1 << id);
+	ret = write_register(MAX31343_R_INT_EN, &reg, 1);
 
-	ret = write_register(MAX31343_R_INT_EN_REG_ADDR, &reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::irq_disable(intr_id_t id)
@@ -1007,19 +885,15 @@ int MAX31343::irq_disable(intr_id_t id)
 	int ret;
 	uint8_t reg;
 
-	ret = read_register(MAX31343_R_INT_EN_REG_ADDR, &reg, 1);
+	ret = read_register(MAX31343_R_INT_EN, &reg, 1);
 	if (ret) {
 		return ret;
 	}
 
 	reg &= ~(1 << id);
+	ret = write_register(MAX31343_R_INT_EN, &reg, 1);
 
-	ret = write_register(MAX31343_R_INT_EN_REG_ADDR, &reg, 1);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::irq_disable_all()
@@ -1027,123 +901,121 @@ int MAX31343::irq_disable_all()
 	int ret;
 	uint8_t reg = 0;
 
-	ret = write_register(MAX31343_R_INT_EN_REG_ADDR, &reg, 1);
-	if (ret) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_INT_EN, &reg, 1);
 
-	return 0;
+	return ret;
 }
 
-int MAX31343::clear_interrupt()
+int MAX31343::clear_irq_flags()
 {
-  return get_interrupt_source();
-}
+	int ret;
+	uint8_t reg;
 
-int MAX31343::get_interrupt_source()
-{
-  int ret;
-  uint8_t reg;
-  ret = read_register(MAX31343_R_INT_STATUS_REG_ADDR, &reg, 1);
-  if (ret) {
-    pr_err("Read interrupt status failed!");
-  }
+	// read status register to clear flags
+	ret = read_register(MAX31343_R_STATUS, &reg, 1);
 
-
-  uint8_t counter = 0;
-  while(counter<8){
-      if(reg & 0x01){
-         return counter;
-      }else{
-        reg = reg >> 1;
-      }
-      counter++;
-  }
-
-  return 0;
+	return ret;
 }
 
 int MAX31343::sw_reset_assert()
 {
 	int ret;
-	rtc_reset_reg_t rst_reg;
+	uint8_t reg;
 
-	ret = read_register(MAX31343_R_RTC_RESET_ADDR, (uint8_t *) &rst_reg, 1);
-	if (ret < 0) {
-		pr_err("read_register failed!");
-		return ret;
-	}
+	reg = 1; /* Put device in reset state */
+	ret = write_register(MAX31343_R_RTC_RESET, &reg, 1);
 
-	rst_reg.bits.swrst = 1;	/* Put device in reset state */
-
-	ret = write_register(MAX31343_R_RTC_RESET_ADDR, (const uint8_t *) &rst_reg, 1);
-	if (ret < 0) {
-		pr_err("read_register failed!");
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::sw_reset_release()
 {
 	int ret;
-	rtc_reset_reg_t rst_reg;
+	uint8_t reg;
 
-	ret = read_register(MAX31343_R_RTC_RESET_ADDR, (uint8_t *) &rst_reg, 1);
-	if (ret < 0) {
-		pr_err("read_register failed!");
-		return ret;
-	}
+	/* Remove device from reset state */
+	reg = 0;
+	ret = write_register(MAX31343_R_RTC_RESET, &reg, 1);
 
-	rst_reg.bits.swrst = 0;	/* Remove device from reset state */
-
-	ret = write_register(MAX31343_R_RTC_RESET_ADDR, (const uint8_t *) &rst_reg, 1);
-	if (ret < 0) {
-		pr_err("read_register failed!");
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::rtc_start()
 {
 	int ret;
-	config_reg1_t cfg1;
+	uint8_t cfg1;
 
-	ret = read_register(MAX31343_R_CONFIG_REG1_ADDR, (uint8_t *) &cfg1, 1);
-	if (ret < 0) {
+	ret = read_register(MAX31343_R_CFG1, &cfg1, 1);
+	if (ret) {
 		return ret;
 	}
+	
+	/* Enable the oscillator */
+	cfg1 |= MAX31343_F_CFG1_ENOSC;	
+	ret = write_register(MAX31343_R_CFG1, &cfg1, 1);
 
-	cfg1.bits.enosc = 1;	/* Enable the oscillator */
-
-	ret = write_register(MAX31343_R_CONFIG_REG1_ADDR, (const uint8_t *) &cfg1, 1);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 int MAX31343::rtc_stop()
 {
 	int ret;
-	config_reg1_t cfg1;
+	uint8_t cfg1;
 
-	ret = read_register(MAX31343_R_CONFIG_REG1_ADDR, (uint8_t *) &cfg1, 1);
-	if (ret < 0) {
+	ret = read_register(MAX31343_R_CFG1, &cfg1, 1);
+	if (ret) {
 		return ret;
 	}
 
-	cfg1.bits.enosc = 0;	/* Disable the oscillator */
+	/* Disable the oscillator */
+	cfg1 &= ~MAX31343_F_CFG1_ENOSC;	
 
-	ret = write_register(MAX31343_R_CONFIG_REG1_ADDR, (const uint8_t *) &cfg1, 1);
-	if (ret < 0) {
-		return ret;
-	}
+	ret = write_register(MAX31343_R_CFG1, &cfg1, 1);
 
-	return 0;
+	return ret;
 }
 
+int MAX31343::nvram_size()
+{
+	return (MAX31343_R_RAM_REG_END - MAX31343_R_RAM_REG_START) + 1;
+}
+
+int MAX31343::nvram_write(int offset, const uint8_t *buffer, int length)
+{
+    int ret;
+	int totlen;
+
+	totlen = (MAX31343_R_RAM_REG_END - MAX31343_R_RAM_REG_START) + 1;
+
+	if ((offset + length) > totlen) {
+		return -1;
+	}
+
+	if (length == 0) {
+		return 0;
+	}
+
+    ret = write_register(MAX31343_R_RAM_REG_START + offset, buffer, length);
+
+	return ret;
+}
+
+int MAX31343::nvram_read(int offset, uint8_t *buffer, int length)
+{
+    int ret;
+	int totlen;
+
+	totlen = (MAX31343_R_RAM_REG_END - MAX31343_R_RAM_REG_START) + 1;
+
+	if ((offset + length) > totlen) {
+		return -1;
+	}
+
+	if (length == 0) {
+		return 0;
+	}
+
+    ret = read_register(MAX31343_R_RAM_REG_START + offset, buffer, length);
+
+	return ret;
+}
