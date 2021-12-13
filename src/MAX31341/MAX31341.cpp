@@ -33,78 +33,13 @@
 
 #include <MAX31341/MAX31341.h>
    
+
+#define GET_BIT_VAL(val, pos, mask)     ( ( (val) & mask) >> pos )
+#define SET_BIT_VAL(val, pos, mask)     ( ( ((int)val) << pos) & mask )
+
 #define BCD2BIN(val) (((val) & 15) + ((val) >> 4) * 10)
 #define BIN2BCD(val) ((((val) / 10) << 4) + (val) % 10)
 
-/*
-	typedef struct {
-	    uint8_t config_reg1;
-	    uint8_t config_reg2;
-	    uint8_t int_ploarity_config;
-	    uint8_t timer_config;
-	    uint8_t int_en_reg;
-	    uint8_t int_status_reg;
-	    uint8_t seconds;
-	    uint8_t minutes;
-	    uint8_t hours;
-	    uint8_t day;
-	    uint8_t date;
-	    uint8_t month;
-	    uint8_t year;
-	    uint8_t alm1_sec;
-	    uint8_t alm1_min;
-	    uint8_t alm1_hrs;
-	    uint8_t alm1day_date;
-	    uint8_t alm2_min;
-	    uint8_t alm2_hrs;
-	    uint8_t alm2day_date;
-	    uint8_t timer_count;
-	    uint8_t timer_init;
-	    uint8_t ram_start;
-	    uint8_t ram_end;
-	    uint8_t pwr_mgmt_reg;
-	    uint8_t trickle_reg;
-	    uint8_t clock_sync_delay;
-	    uint8_t temp_msb;
-	    uint8_t temp_lsb;
-	    uint8_t ts_config;
-	    uint8_t rev_id;
-	} regmap_t;
-*/
-
-MAX31341::MAX31341(TwoWire *i2c, uint8_t i2c_addr)
-{
-	if (i2c == NULL) {
-		while (1) {
-            ;
-        }
-	}
-	m_i2c = i2c;
-	m_slave_addr = i2c_addr;
-}
-
-int MAX31341::get_version(uint8_t &version)
-{
-    int ret;
-    reg_rev_id_t id;
-
-	ret = read_register(MAX31341_REG_REV_ID, (uint8_t *)&id);
-    version = id.bits.rev_id;
-
-    return ret;
-}
-
-void MAX31341::begin(void)
-{
-    m_i2c->begin();
-    
-    //
-    sw_reset_release();
-    //
-    rtc_start();
-    //
-    irq_disable_all();
-}
 
 int MAX31341::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
 {
@@ -175,44 +110,163 @@ int MAX31341::write_register(uint8_t reg, const uint8_t *buf, uint8_t len/*=1*/)
     return ret;
 }
 
-int MAX31341::rtc_regs_to_time(struct tm *time, const regs_rtc_time_t *regs)
+/*****************************************************************************/
+MAX31341::MAX31341(TwoWire *i2c, uint8_t i2c_addr)
 {
+	if (i2c == NULL) {
+		while (1) {
+            ;
+        }
+	}
+	m_i2c = i2c;
+	m_slave_addr = i2c_addr;
+}
+
+void MAX31341::begin(void)
+{
+    m_i2c->begin();
+    
+    sw_reset_release();
+    rtc_start();
+    irq_disable_all();
+}
+
+int MAX31341::get_version(uint8_t &version)
+{
+    int ret;
+    uint8_t val8;
+
+	ret = read_register(MAX31341_R_REV_ID, &val8);
+    version = GET_BIT_VAL(val8, MAX31341_F_REV_ID_REVID_POS, MAX31341_F_REV_ID_REVID);
+
+    return ret;
+}
+
+int MAX31341::get_status(status_t &stat)
+{
+    int ret;
+    uint8_t val8;
+
+    ret = read_register(MAX31341_R_INT_STATUS, &val8);
+    if (ret) {
+        return ret;
+    }
+
+    stat.bits.a1f    = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_A1IF_POS,    MAX31341_F_INT_STATUS_A1IF);
+    stat.bits.a2f    = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_A2IF_POS,    MAX31341_F_INT_STATUS_A2IF);
+    stat.bits.tif    = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_TIF_POS,     MAX31341_F_INT_STATUS_TIF);
+    stat.bits.eif1   = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_EIF1_POS,  	MAX31341_F_INT_STATUS_EIF1);
+    stat.bits.ana_if = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_ANA_IF_POS,  MAX31341_F_INT_STATUS_ANA_IF);
+    stat.bits.osf    = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_OSF_POS,     MAX31341_F_INT_STATUS_OSF);
+    stat.bits.los    = GET_BIT_VAL(val8, MAX31341_F_INT_STATUS_LOS_POS,   	MAX31341_F_INT_STATUS_LOS);
+
+    return ret;
+}
+
+int MAX31341::get_configuration(reg_cfg_t &cfg)
+{
+    int ret;
+    uint8_t regs[2];
+
+    ret = read_register(MAX31341_R_CFG1, regs, 2);
+    if (ret) {
+        return ret;
+    }
+
+	// configuration byte 1
+    cfg.bits.swrstn  = GET_BIT_VAL(regs[0], MAX31341_F_CFG1_SWRSTN_POS,  MAX31341_F_CFG1_SWRSTN);
+    cfg.bits.rs  	 = GET_BIT_VAL(regs[0], MAX31341_F_CFG1_RS_POS,   	 MAX31341_F_CFG1_RS);
+    cfg.bits.osconz  = GET_BIT_VAL(regs[0], MAX31341_F_CFG1_OSCONZ_POS,  MAX31341_F_CFG1_OSCONZ);
+    cfg.bits.clksel  = GET_BIT_VAL(regs[0], MAX31341_F_CFG1_CLKSEL_POS,  MAX31341_F_CFG1_CLKSEL);
+    cfg.bits.intcn   = GET_BIT_VAL(regs[0], MAX31341_F_CFG1_INTCN_POS,   MAX31341_F_CFG1_INTCN);
+    cfg.bits.eclk  	 = GET_BIT_VAL(regs[0], MAX31341_F_CFG1_ECLK_POS,    MAX31341_F_CFG1_ECLK);
+
+    // configuration byte 2
+    cfg.bits.set_rtc  	 = GET_BIT_VAL(regs[1], MAX31341_F_CFG2_SET_RTC_POS,     MAX31341_F_CFG2_SET_RTC);
+    cfg.bits.rd_rtc  	 = GET_BIT_VAL(regs[1], MAX31341_F_CFG2_RD_RTC_POS,   	 MAX31341_F_CFG2_RD_RTC);
+    cfg.bits.i2c_timeout = GET_BIT_VAL(regs[1], MAX31341_F_CFG2_I2C_TIMEOUT_POS, MAX31341_F_CFG2_I2C_TIMEOUT);
+    cfg.bits.bref	 	 = GET_BIT_VAL(regs[1], MAX31341_F_CFG2_BREF_POS,  		 MAX31341_F_CFG2_BREF);
+    cfg.bits.data_reten	 = GET_BIT_VAL(regs[1], MAX31341_F_CFG2_DATA_RETEN_POS,  MAX31341_F_CFG2_DATA_RETEN);
+   
+    return ret;
+}
+
+int MAX31341::set_configuration(reg_cfg_t cfg)
+{
+    int ret;
+    uint8_t regs[2] = {0, };
+
+    // configuration byte 1
+    regs[0] |= SET_BIT_VAL(cfg.bits.swrstn, MAX31341_F_CFG1_SWRSTN_POS,  MAX31341_F_CFG1_SWRSTN);
+    regs[0] |= SET_BIT_VAL(cfg.bits.rs, 	MAX31341_F_CFG1_RS_POS,   	 MAX31341_F_CFG1_RS);
+    regs[0] |= SET_BIT_VAL(cfg.bits.osconz, MAX31341_F_CFG1_OSCONZ_POS,  MAX31341_F_CFG1_OSCONZ);
+    regs[0] |= SET_BIT_VAL(cfg.bits.clksel, MAX31341_F_CFG1_CLKSEL_POS,  MAX31341_F_CFG1_CLKSEL);
+    regs[0] |= SET_BIT_VAL(cfg.bits.intcn, 	MAX31341_F_CFG1_INTCN_POS,   MAX31341_F_CFG1_INTCN);
+    regs[0] |= SET_BIT_VAL(cfg.bits.eclk,   MAX31341_F_CFG1_ECLK_POS,  	 MAX31341_F_CFG1_ECLK);
+
+    // configuration byte 2
+    regs[1] |= SET_BIT_VAL(cfg.bits.set_rtc, 	MAX31341_F_CFG2_SET_RTC_POS,     MAX31341_F_CFG2_SET_RTC);
+    regs[1] |= SET_BIT_VAL(cfg.bits.rd_rtc, 	MAX31341_F_CFG2_RD_RTC_POS,   	 MAX31341_F_CFG2_RD_RTC);
+    regs[1] |= SET_BIT_VAL(cfg.bits.i2c_timeout,MAX31341_F_CFG2_I2C_TIMEOUT_POS, MAX31341_F_CFG2_I2C_TIMEOUT);
+    regs[1] |= SET_BIT_VAL(cfg.bits.bref, 		MAX31341_F_CFG2_BREF_POS,  		 MAX31341_F_CFG2_BREF);
+    regs[1] |= SET_BIT_VAL(cfg.bits.data_reten, MAX31341_F_CFG2_DATA_RETEN_POS,  MAX31341_F_CFG2_DATA_RETEN);
+  
+    ret = write_register(MAX31341_R_CFG1, regs, 2);
+
+    return ret;
+}
+
+int MAX31341::get_time(struct tm *time)
+{
+	int ret;
+	regs_rtc_time_t regs;
+
+	if (time == NULL) {
+		return -1;
+	}
+
+	ret = read_register(MAX31341_R_SECONDS, (uint8_t *) &regs, sizeof(regs));
+	if (ret) {
+		return ret;
+	}
+
 	/* tm_sec seconds [0,61] */
-	time->tm_sec = BCD2BIN(regs->seconds.bcd.value);
-
+	time->tm_sec = BCD2BIN(regs.seconds.bcd.value);
 	/* tm_min minutes [0,59] */
-	time->tm_min = BCD2BIN(regs->minutes.bcd.value);
-
+	time->tm_min = BCD2BIN(regs.minutes.bcd.value);
 	/* tm_hour hour [0,23] */
-	time->tm_hour = BCD2BIN(regs->hours.bcd.value);
-
+	time->tm_hour = BCD2BIN(regs.hours.bcd.value);
 	/* tm_wday day of week [0,6] (Sunday = 0) */
-	time->tm_wday = BCD2BIN(regs->day.bcd.value) - 1;
-
+	time->tm_wday = BCD2BIN(regs.day.bcd.value) - 1;
 	/* tm_mday day of month [1,31] */
-	time->tm_mday = BCD2BIN(regs->date.bcd.value);
-
+	time->tm_mday = BCD2BIN(regs.date.bcd.value);
 	/* tm_mon month of year [0,11] */
-	time->tm_mon = BCD2BIN(regs->month.bcd.value) - 1;
+	time->tm_mon = BCD2BIN(regs.month.bcd.value) - 1;
 
 	/* tm_year years since 2000 */
-	if (regs->month.bits.century) {
-		time->tm_year = BCD2BIN(regs->year.bcd.value) + 200;
+	if (regs.month.bits.century) {
+		time->tm_year = BCD2BIN(regs.year.bcd.value) + 200;
 	} else {
-		time->tm_year = BCD2BIN(regs->year.bcd.value) + 100;
+		time->tm_year = BCD2BIN(regs.year.bcd.value) + 100;
 	}
 
 	/* tm_yday day of year [0,365] */
 	time->tm_yday = 0; /* TODO */
-
 	/* tm_isdst daylight savings flag */
 	time->tm_isdst = 0; /* TODO */
 
-	return 0;
+	return ret;
 }
 
-int MAX31341::time_to_rtc_regs(regs_rtc_time_t *regs, const struct tm *time)
+int MAX31341::set_time(const struct tm *time)
 {
+    int ret;
+	regs_rtc_time_t regs;
+
+	if (time == NULL) {
+		return -1;
+	}
+
 	/*********************************************************
 	 * +----------+------+---------------------------+-------+
 	 * | Member   | Type | Meaning                   | Range |
@@ -230,194 +284,76 @@ int MAX31341::time_to_rtc_regs(regs_rtc_time_t *regs, const struct tm *time)
 	 * * tm_sec is generally 0-59. The extra range is to accommodate for leap
 	 *   seconds in certain systems.
 	 *********************************************************/
-	regs->seconds.bcd.value = BIN2BCD(time->tm_sec);
-
-	regs->minutes.bcd.value = BIN2BCD(time->tm_min);
-
-	regs->hours.bcd.value= BIN2BCD(time->tm_hour);
-
-	regs->day.bcd.value = BIN2BCD(time->tm_wday + 1);
-
-	regs->date.bcd.value = BIN2BCD(time->tm_mday);
-
-	regs->month.bcd.value = BIN2BCD(time->tm_mon + 1);
+	regs.seconds.bcd.value = BIN2BCD(time->tm_sec);
+	regs.minutes.bcd.value = BIN2BCD(time->tm_min);
+	regs.hours.bcd.value= BIN2BCD(time->tm_hour);
+	regs.day.bcd.value = BIN2BCD(time->tm_wday + 1);
+	regs.date.bcd.value = BIN2BCD(time->tm_mday);
+	regs.month.bcd.value = BIN2BCD(time->tm_mon + 1);
 
 	if (time->tm_year >= 200) {
-		regs->month.bits.century = 1;
-		regs->year.bcd.value = BIN2BCD(time->tm_year - 200);
+		regs.month.bits.century = 1;
+		regs.year.bcd.value = BIN2BCD(time->tm_year - 200);
 	} else if (time->tm_year >= 100) {
-		regs->month.bits.century = 0;
-		regs->year.bcd.value = BIN2BCD(time->tm_year - 100);
+		regs.month.bits.century = 0;
+		regs.year.bcd.value = BIN2BCD(time->tm_year - 100);
 	} else {
 		//Invalid set date!
 		return -1;
 	}
 
-	return 0;
-}
-
-int MAX31341::get_time(struct tm *time)
-{
-    int ret;
-	regs_rtc_time_t time_regs;
-
-	if (time == NULL) {
-		return -1;
-	}
-
-    ret = read_register(MAX31341_REG_SECONDS, (uint8_t *) &time_regs, sizeof(time_regs));
+    ret = write_register(MAX31341_R_SECONDS, (uint8_t *)&regs, sizeof(regs));
 	if (ret) {
-		return -1;
+		return ret;
 	}
 
-	ret = rtc_regs_to_time(time, &time_regs);
+    
+    /*
+     *  Set RTC
+     */
+    uint8_t val8;
 
-    return ret;
-}
-
-int MAX31341::set_rtc_time()
-{
-    int ret;
-	reg_config2_t reg;
-
-	/* Toggle Set_RTC bit to set RTC date */
-
-    ret = read_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
+	/* Toggle Set_RTC bit to set RTC registers */
+    ret = read_register(MAX31341_R_CFG2, &val8);
 	if (ret) {
-		return -1;
+		return ret;
 	}
 
-	reg.bits.set_rtc = CONFIG_REG2_SET_RTC_RTCPRGM;
-	ret = write_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
+	val8 |= MAX31341_F_CFG2_SET_RTC;
+	ret = write_register(MAX31341_R_CFG2, &val8);
     if (ret) {
-		return -1;
+		return ret;
 	}
 
 	/* SET_RTC bit should be kept high at least 10ms */
     delay(10);
-    
-	reg.bits.set_rtc = CONFIG_REG2_SET_RTC_RTCRUN;
-	ret = write_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
 
-	return ret;
-}
+	val8 &= ~MAX31341_F_CFG2_SET_RTC;
+	ret = write_register(MAX31341_R_CFG2, &val8);
 
-int MAX31341::set_time(const struct tm *time)
-{
-    int ret;
-	regs_rtc_time_t time_regs;
-
-	if (time == NULL) {
-		return -1;
-	}
-
-	time_to_rtc_regs(&time_regs, time);
-
-    ret = write_register(MAX31341_REG_SECONDS, (const uint8_t *) &time_regs, sizeof(time_regs));
-	if (ret < 0) {
-		return -1;
-	}
-
-	ret = set_rtc_time();
-    
     return ret;
 }
 
-int MAX31341::nvram_write(const uint8_t *buffer, int offset, int length)
+int MAX31341::set_alarm(alarm_no_t alarm_no, const struct tm *alarm_time, alarm_period_t period)
 {
-    int ret;
-	int totlen;
+	int ret;
+	regs_alarm_t regs;
 
-	totlen = (MAX31341_REG_RAM_END - MAX31341_REG_RAM_START) + 1;
-
-	if ((offset + length) > totlen) {
-		return -1;
+	if (alarm_no == ALARM2) {
+		switch (period) {
+			case ALARM_PERIOD_EVERYSECOND:
+				return -1; // not support for alarm 2
+		}
 	}
 
-	if (length == 0) {
-		return 0;
-	}
-
-    ret = write_register(MAX31341_REG_RAM_START + offset, buffer, length);
-
-	return ret;
-}
-
-int MAX31341::nvram_read(uint8_t *buffer, int offset, int length)
-{
-    int ret;
-	int totlen;
-
-	totlen = (MAX31341_REG_RAM_END - MAX31341_REG_RAM_START) + 1;
-
-	if ((offset + length) > totlen) {
-		return -1;
-	}
-
-	if (length == 0) {
-		return -1;
-	}
-
-    ret = read_register(MAX31341_REG_RAM_START + offset, buffer, length);
-
-	return ret;
-}
-
-int MAX31341::nvram_size()
-{
-	return (MAX31341_REG_RAM_END - MAX31341_REG_RAM_START) + 1;
-}
-
-int MAX31341::time_to_alarm_regs(regs_alarm_t &regs, const struct tm *alarm_time)
-{
-	regs.sec.bcd.value = BIN2BCD(alarm_time->tm_sec);
-	regs.min.bcd.value = BIN2BCD(alarm_time->tm_min);
-	regs.hrs.bcd.value = BIN2BCD(alarm_time->tm_hour);
-
-	if (regs.day_date.bits.dy_dt == 0) {
-		/* Date match */
-		regs.day_date.bcd_date.value = BIN2BCD(alarm_time->tm_mday);
-	} else {
-		/* Day match */
-		regs.day_date.bcd_day.value = BIN2BCD(alarm_time->tm_wday);
-	}
-	//regs.mon.bcd.value = BIN2BCD(alarm_time->tm_mon);
-
-	return 0;
-}
-
-int MAX31341::alarm_regs_to_time(struct tm *alarm_time, const regs_alarm_t *regs)
-{
-	alarm_time->tm_sec = BCD2BIN(regs->sec.bcd.value);
-	alarm_time->tm_min = BCD2BIN(regs->min.bcd.value);
-	alarm_time->tm_hour = BCD2BIN(regs->hrs.bcd.value);
-
-	if (regs->day_date.bits.dy_dt == 0) { /* date */
-		alarm_time->tm_mday = BCD2BIN(regs->day_date.bcd_date.value);
-	} else { /* day */
-		alarm_time->tm_wday = BCD2BIN(regs->day_date.bcd_day.value);
-	}
-
-	//alarm_time->tm_mon = BCD2BIN(regs->mon.bcd.value) - 1;
-	//alarm_time->tm_year = BCD2BIN(regs->year.bcd.value) + 100;	/* XXX no century bit */
-
-	return 0;
-}
-
-int MAX31341::set_alarm_period(alarm_no_t alarm_no, regs_alarm_t &regs, alarm_period_t period)
-{
-	if ((alarm_no == ALARM2) && (period == ALARM_PERIOD_EVERYSECOND)) {
-		return -1; /* Alarm2 does not support "once per second" alarm*/
-	}
-
+	/*
+	 *  Set period
+	 */
 	regs.sec.bits.axm1 = 1;
 	regs.min.bits.axm2 = 1;
 	regs.hrs.bits.axm3 = 1;
 	regs.day_date.bits.axm4 = 1;
-	//regs.mon.bits.axm5 = 1;
-	//regs.mon.bits.axm6 = 1;
 	regs.day_date.bits.dy_dt = 1;
-
 
 	switch (period) {
 		case ALARM_PERIOD_EVERYSECOND:
@@ -448,71 +384,40 @@ int MAX31341::set_alarm_period(alarm_no_t alarm_no, regs_alarm_t &regs, alarm_pe
 			regs.day_date.bits.axm4 = 0;
 			regs.day_date.bits.dy_dt = 0;
 			break;
-		//case ALARM_PERIOD_YEARLY:
-		//...
-		//	break;
-		//case ALARM_PERIOD_ONETIME:
-		//...
-		//	break;
 		default:
 			return -1;
 	}
 
-	return 0;
-}
+	/* 
+	 * Convert time structure to alarm registers 
+	 */
+	regs.sec.bcd.value = BIN2BCD(alarm_time->tm_sec);
+	regs.min.bcd.value = BIN2BCD(alarm_time->tm_min);
+	regs.hrs.bcd.value = BIN2BCD(alarm_time->tm_hour);
 
-int MAX31341::set_alarm_regs(alarm_no_t alarm_no, const regs_alarm_t *regs)
-{
-    int ret;
-	uint8_t *ptr_regs = (uint8_t *)regs;
-	uint8_t len = sizeof(regs_alarm_t);
+	if (regs.day_date.bits.dy_dt == 0) {
+		/* Date match */
+		regs.day_date.bcd_date.value = BIN2BCD(alarm_time->tm_mday);
+	} else {
+		/* Day match */
+		regs.day_date.bcd_day.value = BIN2BCD(alarm_time->tm_wday);
+	}
+	//regs.mon.bcd.value = BIN2BCD(alarm_time->tm_mon);
+	if (ret) {
+		return ret;
+	}
+
+    /* 
+     *  Write Registers 
+     */
+	uint8_t *ptr_regs = (uint8_t *)&regs;
 
 	if (alarm_no == ALARM1) {
-		ret = write_register(MAX31341_REG_ALM1_SEC, &ptr_regs[0], len);
+		ret = write_register(MAX31341_R_ALM1_SEC, &ptr_regs[0], sizeof(regs_alarm_t));
 	} else {
 		/* Discard sec starts from min register */
-		len -= 1;
-		ret = write_register(MAX31341_REG_ALM2_MIN, &ptr_regs[1], len);
+		ret = write_register(MAX31341_R_ALM2_MIN, &ptr_regs[1], sizeof(regs_alarm_t)-1);
 	}
-    
-    return ret;
-}
-
-int MAX31341::get_alarm_regs(alarm_no_t alarm_no, regs_alarm_t *regs)
-{
-    int ret;
-	uint8_t *ptr_regs = (uint8_t *)regs;
-	uint8_t len = sizeof(regs_alarm_t);
-
-	if (alarm_no == ALARM1) {
-		ret = read_register(MAX31341_REG_ALM1_SEC, &ptr_regs[0], len);
-	} else {
-		regs->sec.raw = 0;	/* zeroise second register for alarm2 */
-		/* starts from min register (no sec register) */
-		len -= 1;	/* discard mon & sec registers */
-		ret = read_register(MAX31341_REG_ALM2_MIN, &ptr_regs[1], len);
-	}
-
-    return ret;
-}
-
-int MAX31341::set_alarm(alarm_no_t alarm_no, const struct tm *alarm_time, alarm_period_t period)
-{
-	int ret;
-	regs_alarm_t regs;
-
-	ret = set_alarm_period(alarm_no, regs, period);
-	if (ret) {
-		return ret;
-	}
-
-	/* Convert time structure to alarm registers */
-	ret = time_to_alarm_regs(regs, alarm_time);
-	if (ret) {
-		return ret;
-	}
-
-	ret = set_alarm_regs(alarm_no, &regs);
 
 	return ret;
 }
@@ -521,19 +426,38 @@ int MAX31341::get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period
 {
 	int ret;
 	regs_alarm_t regs;
-	uint8_t reg;
+	uint8_t *ptr_regs = (uint8_t *)&regs;
 
-	ret = get_alarm_regs(alarm_no, &regs);
-	if (ret) {
-		return ret;
+	if (alarm_no == ALARM1) {
+		ret = read_register(MAX31341_R_ALM1_SEC, &ptr_regs[0], sizeof(regs_alarm_t));
+	} else {
+		regs.sec.raw = 0;	/* zeroise second register for alarm2 */
+		/* starts from min register (no sec register) */
+		ret = read_register(MAX31341_R_ALM2_MIN, &ptr_regs[1], sizeof(regs_alarm_t)-1);
 	}
+    if (ret) {
+        return ret;
+    }
 
-	/* Convert alarm registers to time structure */
-	ret = alarm_regs_to_time(alarm_time, &regs);
-	if (ret) {
-		return ret;
+    /* 
+     *  Convert alarm registers to time structure 
+     */
+	alarm_time->tm_sec = BCD2BIN(regs.sec.bcd.value);
+	alarm_time->tm_min = BCD2BIN(regs.min.bcd.value);
+	alarm_time->tm_hour = BCD2BIN(regs.hrs.bcd.value);
+
+	if (regs.day_date.bits.dy_dt == 0) { /* date */
+		alarm_time->tm_mday = BCD2BIN(regs.day_date.bcd_date.value);
+	} else { /* day */
+		alarm_time->tm_wday = BCD2BIN(regs.day_date.bcd_day.value);
 	}
+	//alarm_time->tm_mon = BCD2BIN(regs.mon.bcd.value) - 1;
+	//alarm_time->tm_year = BCD2BIN(regs.year.bcd.value) + 100;	/* XXX no century bit */
 
+
+    /*
+     *  Find period
+     */
 	*period = (alarm_no == ALARM1) ? ALARM_PERIOD_EVERYSECOND : ALARM_PERIOD_EVERYMINUTE;
 
 	if ((alarm_no == ALARM1) && (regs.sec.bits.axm1 == 0)) *period = ALARM_PERIOD_EVERYMINUTE;
@@ -544,15 +468,20 @@ int MAX31341::get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period
 	//if ((alarm_no == ALARM1) && (regs.mon.bits.axm5 == 0)) *period = ALARM_PERIOD_YEARLY;
 	//if ((alarm_no == ALARM1) && (regs.mon.bits.axm6 == 0)) *period = ALARM_PERIOD_ONETIME;
 
-	ret = read_register(MAX31341_REG_INT_EN, (uint8_t *)&reg, 1);
+
+    /*
+     *  Get enable status
+     */
+ 	uint8_t val8;
+	ret = read_register(MAX31341_R_INT_EN, &val8);
 	if (ret) {
 		return ret;
 	}
 
 	if (alarm_no == ALARM1) {
-		*is_enabled = (reg & (1 << INTR_ID_ALARM1)) != 0;
+		*is_enabled = (val8 & (1 << INTR_ID_ALARM1)) != 0;
 	} else {
-		*is_enabled = (reg & (1 << INTR_ID_ALARM2)) != 0;
+		*is_enabled = (val8 & (1 << INTR_ID_ALARM2)) != 0;
 	}
 
 	return ret;
@@ -561,15 +490,17 @@ int MAX31341::get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period
 int MAX31341::set_power_mgmt_mode(power_mgmt_mode_t mode)
 {
 	int ret;
-	reg_pwr_mgmt_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_PWR_MGMT, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_PWR_MGMT, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.d_mode = mode;
-	ret = write_register(MAX31341_REG_PWR_MGMT, (uint8_t *)&reg);
+	val8 &= ~MAX31341_F_PWR_MGMT_D_MODE;
+	val8 |= SET_BIT_VAL(mode, MAX31341_F_PWR_MGMT_D_MODE_POS, MAX31341_F_PWR_MGMT_D_MODE);
+
+	ret = write_register(MAX31341_R_PWR_MGMT, &val8);
 
 	return ret;
 }
@@ -577,15 +508,17 @@ int MAX31341::set_power_mgmt_mode(power_mgmt_mode_t mode)
 int MAX31341::comparator_threshold_level(comp_thresh_t th)
 {
 	int ret;
-	reg_config2_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_CFG2, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.bref = th;
-	ret = write_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
+	val8 &= MAX31341_F_CFG2_BREF;
+	val8 |= SET_BIT_VAL(th, MAX31341_F_CFG2_BREF_POS, MAX31341_F_CFG2_BREF);
+
+	ret = write_register(MAX31341_R_CFG2, &val8);
 
 	return ret;
 }
@@ -593,29 +526,29 @@ int MAX31341::comparator_threshold_level(comp_thresh_t th)
 int MAX31341::supply_select(power_mgmt_supply_t supply)
 {
 	int ret;
-	reg_pwr_mgmt_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_PWR_MGMT, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_PWR_MGMT, &val8);
 	if (ret) {
 		return ret;
 	}
 
 	switch (supply) {
-	case POW_MGMT_SUPPLY_SEL_VCC:
-		reg.bits.d_man_sel = 1;
-		reg.bits.d_vback_sel = 0;
-		break;
-	case POW_MGMT_SUPPLY_SEL_AIN:
-		reg.bits.d_man_sel = 1;
-		reg.bits.d_vback_sel = 1;
-		break;
-	case POW_MGMT_SUPPLY_SEL_AUTO:
-	default:
-		reg.bits.d_man_sel = 0;
-		break;
+		case POW_MGMT_SUPPLY_SEL_VCC:
+			val8 |= MAX31341_F_PWR_MGMT_DMAN_SEL;
+			val8 &= ~MAX31341_F_PWR_MGMT_D_VBACK_SEL;
+			break;
+		case POW_MGMT_SUPPLY_SEL_AIN:
+			val8 |= MAX31341_F_PWR_MGMT_DMAN_SEL;
+			val8 |= MAX31341_F_PWR_MGMT_D_VBACK_SEL;
+			break;
+		case POW_MGMT_SUPPLY_SEL_AUTO:
+		default:
+			val8 &= ~MAX31341_F_PWR_MGMT_DMAN_SEL;
+			break;
 	}
 
-	ret = write_register(MAX31341_REG_PWR_MGMT, (uint8_t *)&reg);
+	ret = write_register(MAX31341_R_PWR_MGMT, &val8);
 
 	return ret;
 }
@@ -623,13 +556,10 @@ int MAX31341::supply_select(power_mgmt_supply_t supply)
 int MAX31341::trickle_charger_enable(trickle_charger_ohm_t res)
 {
 	int ret;
-	struct {
-		unsigned char d_trickle : 4;
-		unsigned char           : 4;
-	} reg;
+	uint8_t val8 = 0;
 
-	reg.d_trickle = res;
-	ret = write_register(MAX31341_REG_TRICKLE, (uint8_t *)&reg);
+	val8 |= SET_BIT_VAL(res, MAX31341_F_TRICKLE_D_TRICKLE_POS, MAX31341_F_TRICKLE_D_TRICKLE);
+	ret = write_register(MAX31341_R_TRICKLE, &val8);
 
 	return ret;
 }
@@ -637,27 +567,28 @@ int MAX31341::trickle_charger_enable(trickle_charger_ohm_t res)
 int MAX31341::trickle_charger_disable()
 {
 	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
-	reg = 0;
-	ret = write_register(MAX31341_REG_TRICKLE, &reg);
+	val8 = 0;
+	ret = write_register(MAX31341_R_TRICKLE, &val8);
 
 	return ret;
 }
 
-
-int MAX31341::set_output_square_wave_frequency(square_wave_out_freq_t freq)
+int MAX31341::set_square_wave_frequency(sqw_out_freq_t freq)
 {
 	int ret;
-	reg_config1_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.rs = freq;
-	ret = write_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg, 1);
+	val8 &= ~MAX31341_F_CFG1_RS;
+	val8 |= SET_BIT_VAL(freq, MAX31341_F_CFG1_RS_POS, MAX31341_F_CFG1_RS);
+
+	ret = write_register(MAX31341_R_CFG1, &val8);
 
 	return ret;
 }
@@ -665,15 +596,17 @@ int MAX31341::set_output_square_wave_frequency(square_wave_out_freq_t freq)
 int MAX31341::set_clock_sync_delay(sync_delay_t delay)
 {
 	int ret;
-	reg_clock_sync_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CLOCK_SYNC, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_CLOCK_SYNC, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.sync_delay = delay;
-	ret = write_register(MAX31341_REG_CLOCK_SYNC, (uint8_t *)&reg);
+	val8 &= ~MAX31341_F_CLOCK_SYNC_SYNC_DELAY;
+	val8 |= SET_BIT_VAL(delay, MAX31341_F_CLOCK_SYNC_SYNC_DELAY_POS, MAX31341_F_CLOCK_SYNC_SYNC_DELAY);
+
+	ret = write_register(MAX31341_R_CLOCK_SYNC, &val8);
     
 	return ret;
 }
@@ -681,16 +614,17 @@ int MAX31341::set_clock_sync_delay(sync_delay_t delay)
 int MAX31341::set_clkin_frequency(clkin_freq_t freq)
 {
 	int ret;
-	reg_config1_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.clksel = freq;
+	val8 &= ~MAX31341_F_CFG1_CLKSEL;
+	val8 |= SET_BIT_VAL(freq, MAX31341_F_CFG1_CLKSEL_POS, MAX31341_F_CFG1_CLKSEL);
 
-	ret = write_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	ret = write_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
@@ -707,15 +641,20 @@ int MAX31341::set_clkin_frequency(clkin_freq_t freq)
 int MAX31341::configure_intb_clkout_pin(config_intb_clkout_pin_t sel)
 {
 	int ret;
-	reg_config1_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.intcn = (sel == CONFIGURE_PIN_AS_INTB) ? 1 : 0;
-	ret = write_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	if (sel == CONFIGURE_PIN_AS_INTB) {
+		val8 |= MAX31341_F_CFG1_INTCN;
+	} else {
+		val8 &= ~MAX31341_F_CFG1_INTCN;
+	}
+
+	ret = write_register(MAX31341_R_CFG1, &val8);
 
 	return ret;
 }
@@ -723,16 +662,20 @@ int MAX31341::configure_intb_clkout_pin(config_intb_clkout_pin_t sel)
 int MAX31341::configure_inta_clkin_pin(config_inta_clkin_pin_t sel)
 {
 	int ret;
-	reg_config1_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.eclk = (sel == CONFIGURE_PIN_AS_CLKIN) ? 1 : 0;
+	if (sel == CONFIGURE_PIN_AS_CLKIN) {
+		val8 |= MAX31341_F_CFG1_ECLK;
+	} else {
+		val8 &= ~MAX31341_F_CFG1_ECLK;
+	}
 
-	ret = write_register(MAX31341_REG_CONFIG_1, (uint8_t *)&reg);
+	ret = write_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
@@ -748,58 +691,64 @@ int MAX31341::configure_inta_clkin_pin(config_inta_clkin_pin_t sel)
 	return ret;
 }
 
-int MAX31341::timer_init(uint8_t value, bool repeat, timer_freq_t freq)
+int MAX31341::timer_init(uint8_t initial_value, bool repeat, timer_freq_t freq)
 {
 	int ret;
-	reg_timer_config_t reg_cfg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg_cfg);
+	ret = read_register(MAX31341_R_TIMER_CFG, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg_cfg.bits.te = 0; /* timer is reset */
-	reg_cfg.bits.tpause = 1; /* timer is paused */
-	reg_cfg.bits.trpt = repeat ? 1 : 0;	/* Timer repeat mode */
-	reg_cfg.bits.tfs = freq;	/* Timer frequency */
+	val8 &= ~MAX31341_F_TIMER_CFG_TE;
+	val8 |= MAX31341_F_TIMER_CFG_TPAUSE;
+	if (repeat) {
+		val8 |= MAX31341_F_TIMER_CFG_TRPT;
+	} else {
+		val8 &= ~MAX31341_F_TIMER_CFG_TRPT;
+	}
+	val8 &= ~MAX31341_F_TIMER_CFG_TFS;
+	val8 |= SET_BIT_VAL(freq, MAX31341_F_TIMER_CFG_TFS_POS, MAX31341_F_TIMER_CFG_TFS);
 
-	ret = write_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg_cfg);
+	ret = write_register(MAX31341_R_TIMER_CFG, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	ret = write_register(MAX31341_REG_TIMER_INIT, (uint8_t *)&value);
+	ret = write_register(MAX31341_R_TIMER_INIT, &initial_value);
 
 	return ret;
 }
 
-uint8_t MAX31341::timer_get()
+int MAX31341::timer_get(uint8_t &count)
 {
 	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_TIMER_COUNT, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_TIMER_COUNT, &val8);
 	if (ret) {
-		return (uint8_t) - 1;
+		return ret;
 	}
+	count = val8;
 
-	return reg;
+	return ret;
 }
 
 int MAX31341::timer_start()
 {
 	int ret;
-	reg_timer_config_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_TIMER_CFG, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 1;
-	reg.bits.tpause = 0;
+	val8 |= MAX31341_F_TIMER_CFG_TE;
+	val8 &= ~MAX31341_F_TIMER_CFG_TPAUSE;
 
-	ret = write_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = write_register(MAX31341_R_TIMER_CFG, &val8);
 
 	return ret;
 }
@@ -807,17 +756,17 @@ int MAX31341::timer_start()
 int MAX31341::timer_pause()
 {
 	int ret;
-	reg_timer_config_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_TIMER_CFG, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 1;
-	reg.bits.tpause = 1;
+	val8 |= MAX31341_F_TIMER_CFG_TE;
+	val8 |= MAX31341_F_TIMER_CFG_TPAUSE;
 
-	ret = write_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = write_register(MAX31341_R_TIMER_CFG, &val8);
 
 	return ret;
 }
@@ -825,16 +774,17 @@ int MAX31341::timer_pause()
 int MAX31341::timer_continue()
 {
 	int ret;
-	reg_timer_config_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_TIMER_CFG, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 1;
-	reg.bits.tpause = 0;
-	ret = write_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	val8 |= MAX31341_F_TIMER_CFG_TE;
+	val8 &= ~MAX31341_F_TIMER_CFG_TPAUSE;
+
+	ret = write_register(MAX31341_R_TIMER_CFG, &val8);
 
 	return ret;
 }
@@ -842,105 +792,57 @@ int MAX31341::timer_continue()
 int MAX31341::timer_stop()
 {
 	int ret;
-	reg_timer_config_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = read_register(MAX31341_R_TIMER_CFG, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg.bits.te = 0;
-	reg.bits.tpause = 1;
+	val8 &= ~MAX31341_F_TIMER_CFG_TE;
+	val8 |= MAX31341_F_TIMER_CFG_TPAUSE;
 
-	ret = write_register(MAX31341_REG_TIMER_CONFIG, (uint8_t *)&reg);
+	ret = write_register(MAX31341_R_TIMER_CFG, &val8);
 
 	return ret;
 }
 
-int MAX31341::data_retention_mode_config(int state)
+int MAX31341::set_data_retention_mode(bool enable)
 {
 	int ret;
-	reg_config1_t cfg1;
-	reg_config2_t cfg2;
+	uint8_t regs[2];
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *)&cfg1);
+	ret = read_register(MAX31341_R_CFG1, regs, 2);
 	if (ret) {
 		return ret;
 	}
 
-	ret = read_register(MAX31341_REG_CONFIG_2, (uint8_t *)&cfg2);
-	if (ret) {
-		return ret;
-	}
-
-	if (state) {
-		cfg1.bits.osconz = 1;
-		cfg2.bits.data_reten = 1;
+	if (enable) {
+		regs[0] |= MAX31341_F_CFG1_OSCONZ; 
+		regs[1] |= MAX31341_F_CFG2_DATA_RETEN; 
 	} else {
-		cfg1.bits.osconz = 0;
-		cfg2.bits.data_reten = 0;
+		regs[0] &= ~MAX31341_F_CFG1_OSCONZ; 
+		regs[1] &= ~MAX31341_F_CFG2_DATA_RETEN; 
 	}
 
-	ret = write_register(MAX31341_REG_CONFIG_1, (uint8_t *)&cfg1);
-	if (ret) {
-		return ret;
-	}
-
-	ret = write_register(MAX31341_REG_CONFIG_2, (uint8_t *)&cfg2);
+	ret = write_register(MAX31341_R_CFG1, regs, 2);
 
 	return ret;
-}
-
-int MAX31341::data_retention_mode_enter()
-{
-	return data_retention_mode_config(1);
-}
-
-int MAX31341::data_retention_mode_exit()
-{
-	return data_retention_mode_config(0);
-}
-
-int MAX31341::i2c_timeout_config(int enable)
-{
-	int ret;
-	reg_config2_t reg;
-
-	ret = read_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
-	if (ret) {
-		return ret;
-	}
-
-	reg.bits.i2c_timeout = (enable) ? 1 : 0;
-
-	ret = write_register(MAX31341_REG_CONFIG_2, (uint8_t *)&reg);
-
-	return ret;
-}
-
-int MAX31341::i2c_timeout_enable()
-{
-	return i2c_timeout_config(1);
-}
-
-int MAX31341::i2c_timeout_disable()
-{
-	return i2c_timeout_config(0);
 }
 
 int MAX31341::irq_enable(intr_id_t id)
 {
 	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_INT_EN, &reg);
+	ret = read_register(MAX31341_R_INT_EN, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg |= (1 << id);
+	val8 |= (1 << id);
 
-	ret = write_register(MAX31341_REG_INT_EN, &reg);
+	ret = write_register(MAX31341_R_INT_EN, &val8);
 
 	return ret;
 }
@@ -948,15 +850,15 @@ int MAX31341::irq_enable(intr_id_t id)
 int MAX31341::irq_disable(intr_id_t id)
 {
 	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_INT_EN, &reg);
+	ret = read_register(MAX31341_R_INT_EN, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	reg &= ~(1 << id);
-	ret = write_register(MAX31341_REG_INT_EN, &reg);
+	val8 &= ~(1 << id);
+	ret = write_register(MAX31341_R_INT_EN, &val8);
 
 	return ret;
 }
@@ -964,9 +866,20 @@ int MAX31341::irq_disable(intr_id_t id)
 int MAX31341::irq_disable_all()
 {
 	int ret;
-	uint8_t reg = 0;
+	uint8_t val8 = 0;
 
-	ret = write_register(MAX31341_REG_INT_EN, &reg);
+	ret = write_register(MAX31341_R_INT_EN, &val8);
+
+	return ret;
+}
+
+int MAX31341::clear_irq_flags()
+{
+	int ret;
+	uint8_t val8;
+
+	// read status register to clear flags
+	ret = read_register(MAX31341_R_INT_STATUS, &val8);
 
 	return ret;
 }
@@ -974,16 +887,17 @@ int MAX31341::irq_disable_all()
 int MAX31341::sw_reset_assert()
 {
 	int ret;
-	reg_config1_t config_reg1;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *) &config_reg1);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	config_reg1.bits.swrstn = 0;	/* Put device in reset state */
+	/* Put device in reset state */
+	val8 &= ~MAX31341_F_CFG1_SWRSTN;
 
-	ret = write_register(MAX31341_REG_CONFIG_1, (const uint8_t *) &config_reg1);
+	ret = write_register(MAX31341_R_CFG1, &val8);
 
 	return ret;
 }
@@ -991,15 +905,16 @@ int MAX31341::sw_reset_assert()
 int MAX31341::sw_reset_release()
 {
 	int ret;
-	reg_config1_t config_reg1;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *) &config_reg1);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	config_reg1.bits.swrstn = 1;	/* Remove device from reset state */
-	ret = write_register(MAX31341_REG_CONFIG_1, (const uint8_t *) &config_reg1);
+	/* Remove device from reset state */
+	val8 |= MAX31341_F_CFG1_SWRSTN;
+	ret = write_register(MAX31341_R_CFG1, &val8);
 
 	return ret;
 }
@@ -1007,31 +922,77 @@ int MAX31341::sw_reset_release()
 int MAX31341::rtc_start()
 {
 	int ret;
-	reg_config1_t config_reg1;
+	uint8_t val8;
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *) &config_reg1);
+	ret = read_register(MAX31341_R_CFG1, &val8);
 	if (ret) {
 		return ret;
 	}
 
-	config_reg1.bits.osconz = 0;	/* Enable the oscillator */
-	ret = write_register(MAX31341_REG_CONFIG_1, (const uint8_t *) &config_reg1);
+	/* Enable the oscillator */
+	val8 &= ~MAX31341_F_CFG1_OSCONZ; 
+	ret = write_register(MAX31341_R_CFG1, &val8);
+
+	return ret;
+}
+int MAX31341::rtc_stop()
+{
+	int ret;
+	uint8_t val8;
+
+	ret = read_register(MAX31341_R_CFG1, &val8);
+	if (ret) {
+		return ret;
+	}
+
+	/* Disable the oscillator */
+	val8 |= MAX31341_F_CFG1_OSCONZ; 
+	ret = write_register(MAX31341_R_CFG1, &val8);
 
 	return ret;
 }
 
-int MAX31341::rtc_stop()
+int MAX31341::nvram_size()
 {
-	int ret;
-	reg_config1_t config_reg1;
+	return (MAX31341_R_RAM_END - MAX31341_R_RAM_START) + 1;
+}
 
-	ret = read_register(MAX31341_REG_CONFIG_1, (uint8_t *) &config_reg1);
-	if (ret) {
-		return ret;
+int MAX31341::nvram_write(const uint8_t *buffer, int offset, int length)
+{
+    int ret;
+	int totlen;
+
+	totlen = (MAX31341_R_RAM_END - MAX31341_R_RAM_START) + 1;
+
+	if ((offset + length) > totlen) {
+		return -1;
 	}
 
-	config_reg1.bits.osconz = 1;	/* Disable the oscillator */
-	ret = write_register(MAX31341_REG_CONFIG_1, (const uint8_t *) &config_reg1);
+	if (length == 0) {
+		return 0;
+	}
+
+    ret = write_register(MAX31341_R_RAM_START + offset, buffer, length);
+
+	return ret;
+}
+
+int MAX31341::nvram_read(uint8_t *buffer, int offset, int length)
+{
+    int ret;
+	int totlen;
+
+	totlen = (MAX31341_R_RAM_END - MAX31341_R_RAM_START) + 1;
+
+	if ((offset + length) > totlen) {
+		return -1;
+	}
+
+	if (length == 0) {
+		return 0;
+	}
+
+    ret = read_register(MAX31341_R_RAM_START + offset, buffer, length);
 
 	return ret;
 }

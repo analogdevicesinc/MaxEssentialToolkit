@@ -1,10 +1,12 @@
 #include <MaxEssentialToolkit.h>
 
-
 MAX31341 rtc(&Wire, MAX31341_I2C_ADDRESS);
 MAX31341::status_t g_stat;
 
-int pin_inta = 3;// interrupt pins that connects to MAX31341
+// Pin Number that connects to MAX31341 interrupt pin
+// Please update pin_interrupt depend on your target board connection
+int pin_inta = 3;
+
 struct tm rtc_ctime;
 
 void print_time(void) {
@@ -21,16 +23,21 @@ void print_time(void) {
 }
 
 void setup() {
+    int ret;
 
     Serial.begin(115200);
     Serial.println("---------------------");
-    Serial.println("Timer use case example:");
+    Serial.println("ALARM use case example:");
+    Serial.println("The sensor will be configured to generate periodic alarm.");
+    Serial.println("Note: You may need to unplug and plug target board while switching between examples, ");
+    Serial.println("to previous example configuration to be deleted.");
     Serial.println(" ");
 
-    pinMode(pin_inta, INPUT_PULLUP);
-
+    // Set alarm pin as input
+    pinMode(pin_inta, INPUT);
+    
     rtc.begin();
-
+    
     rtc_ctime.tm_year = 121; // years since 1900
     rtc_ctime.tm_mon  = 10;  // 0-11
     rtc_ctime.tm_mday = 24;  // 1-31
@@ -42,18 +49,33 @@ void setup() {
     rtc_ctime.tm_wday  = 0;  // 0-6
     rtc_ctime.tm_isdst = 0;  // Daylight saving flag
     
-    int ret = rtc.set_time(&rtc_ctime);
+    ret = rtc.set_time(&rtc_ctime);
     if (ret) {
         Serial.println("Set time failed!");
     }
 
-    rtc.timer_stop();
-    rtc.timer_init(16, true, MAX31341::TIMER_FREQ_16HZ);
-    rtc.irq_enable(MAX31341::INTR_ID_TIMER);
-    rtc.timer_start();
+    ret = rtc.configure_inta_clkin_pin(MAX31341::CONFIGURE_PIN_AS_INTA);
+    if (ret) {
+        Serial.println("Configure inta failed!");
+    }
+    
+    ret = rtc.set_alarm(MAX31341::ALARM2, &rtc_ctime, MAX31341::ALARM_PERIOD_EVERYMINUTE);
+    if (ret) {
+        Serial.println("Set alarm failed!");
+    }
+
+    ret = rtc.irq_enable(MAX31341::INTR_ID_ALARM2);
+    if (ret) {
+        Serial.println("IRQ enalbe failed!");
+    }
+    
+    rtc.clear_irq_flags();
+    print_time(); // print current time
 }
 
-void loop() {
+void loop()  {
+
+    //Serial.println("Tick");
 
     int pin_state = digitalRead(pin_inta);
     
@@ -67,7 +89,7 @@ void loop() {
             return;
         }
 
-        if (g_stat.bits.tif) { // is timer flag set?
+        if (g_stat.bits.a2f) { // is alarm1 flag set?
             print_time();
         }
     }

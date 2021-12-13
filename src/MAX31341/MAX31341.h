@@ -34,7 +34,7 @@
 #ifndef _MAX31341_H_
 #define _MAX31341_H_
 
-#include <MAX31341/MAX31341_regs.h>
+#include <MAX31341/MAX31341_registers.h>
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -112,11 +112,11 @@ public:
 	* @brief	Square wave output frequency selection on CLKOUT pin
 	*/
 	typedef enum {
-	    SQUARE_WAVE_OUT_FREQ_1HZ,		/**< 1Hz */
-	    SQUARE_WAVE_OUT_FREQ_4096HZ,	/**< 4.098kHz */
-	    SQUARE_WAVE_OUT_FREQ_8192HZ,	/**< 8.192kHz */
-	    SQUARE_WAVE_OUT_FREQ_32768HZ,	/**< 32.768kHz */
-	} square_wave_out_freq_t;
+	    SQW_OUT_FREQ_1HZ,		/**< 1Hz */
+	    SQW_OUT_FREQ_4096HZ,	/**< 4.098kHz */
+	    SQW_OUT_FREQ_8192HZ,	/**< 8.192kHz */
+	    SQW_OUT_FREQ_32768HZ,	/**< 32.768kHz */
+	} sqw_out_freq_t;
 
 	/**
 	* @brief	Selection of interrupt ids
@@ -179,10 +179,42 @@ public:
 	    SYNC_DLY_LESS_THAN_10MS,		/**<  Sync delay less than 10 msec, recommended for internal clock */
 	} sync_delay_t;
 
+	typedef union {
+		uint8_t raw;
+		struct {
+			uint8_t a1f     : 1;
+			uint8_t a2f     : 1;
+			uint8_t tif     : 1;
+			uint8_t 	    : 1;
+			uint8_t eif1    : 1;
+			uint8_t ana_if 	: 1;
+			uint8_t osf     : 1;
+			uint8_t los     : 1;
+		} bits;
+	} status_t;
+
+	typedef union {
+		uint16_t raw;
+		struct {
+			uint16_t swrstn      	: 1; 
+			uint16_t rs   	 		: 2;
+			uint16_t osconz	     	: 1; 
+			uint16_t clksel 		: 2;
+			uint16_t intcn    		: 1;
+			uint16_t eclk			: 1; 
+			uint16_t 				: 1; // not used 
+			uint16_t set_rtc 	 	: 1; 
+			uint16_t rd_rtc  	 	: 1; 
+			uint16_t i2c_timeout    : 1;
+			uint16_t bref      		: 2;
+			uint16_t data_reten     : 1;
+			uint16_t 			    : 1; // not used
+		} bits;
+	} reg_cfg_t;
+
 	/**
 	* @brief	Base class constructor.
 	*
-	* @param[in]	regmap Pointer to device register mappings.
 	* @param[in]	i2c Pointer to I2C bus object for this device.
 	* @param[in]	i2c_addr slave addr
 	*/
@@ -202,28 +234,33 @@ public:
 	* @returns		0 on success, negative error code on failure.
 	*/
     int get_version(uint8_t &version);
-	
-    /**
-	* @brief		Read from a register.
-	*
-	* @param[in]	reg Address of a register to be read.
-	* @param[out]	value Pointer to save result value.
-	* @param[in]	len Size of result to be read.
-	*
-	* @returns		0 on success, negative error code on failure.
-	*/
-	int read_register(uint8_t reg, uint8_t *value, uint8_t len=1);
 
-	/**
-	* @brief		Write to a register.
-	*
-	* @param[in]	reg Address of a register to be written.
-	* @param[out]	value Pointer of value to be written to register.
-	* @param[in]	len Size of result to be written.
-	*
-	* @returns		0 on success, negative error code on failure.
-	*/
-	int write_register(uint8_t reg, const uint8_t *value, uint8_t len=1);
+    /**
+    * @brief        Read status byte
+    *
+    * @param[out]   stat: Decoded status byte
+    *
+    * @returns      0 on success, negative error code on failure.
+    */
+    int get_status(status_t &stat);
+
+    /**
+    * @brief        Get configuration bytes
+    *
+    * @param[out]   cfg: configuration values
+    *
+    * @returns      0 on success, negative error code on failure.
+    */
+    int get_configuration(reg_cfg_t &cfg);
+
+    /**
+    * @brief        Set configuration bytes
+    *
+    * @param[in]    cfg: configuration values
+    *
+    * @returns      0 on success, negative error code on failure.
+    */
+    int set_configuration(reg_cfg_t cfg);
 
 	/**
 	* @brief		Read time info from RTC.
@@ -242,35 +279,6 @@ public:
 	* @returns		0 on success, negative error code on failure.
 	*/
 	int set_time(const struct tm *rtc_ctime);
-
-	/**
-	* @brief		Non-volatile memory write
-	*
-	* @param[out]	buffer Pointer to the data to be written
-	* @param[in]	offset Offset of location in NVRAM
-	* @param[in]	length Number of bytes to write
-	*
-	* @return		0 on success, error code on failure
-	*/
-	int nvram_write(const uint8_t *buffer, int offset, int length);
-
-	/**
-	* @brief		Non-volatile memory read
-	*
-	* @param[in]	buffer Buffer to read in to
-	* @param[in]	offset Offset of location in NVRAM
-	* @param[in]	length Number of bytes to read
-	*
-	* @return		0 on success, error code on failure
-	*/
-	int nvram_read(uint8_t *buffer, int offset, int length);
-
-	/**
-	* @brief		NVRAM size of the part
-	*
-	* @return		0 if part does not have a NVRAM, otherwise returns size
-	*/
-	int nvram_size();
 
 	/**
 	* @brief		Set an alarm condition
@@ -345,7 +353,7 @@ public:
 	*
 	* @return		0 on success, error code on failure
 	*/
-	int set_output_square_wave_frequency(square_wave_out_freq_t freq);
+	int set_square_wave_frequency(sqw_out_freq_t freq);
 
 	/**
 	* @brief		Select external clock input frequency
@@ -397,7 +405,7 @@ public:
 	*
 	* @return	0 on success, error code on failure
 	*/
-	uint8_t timer_get();
+	int timer_get(uint8_t &count);
 
 	/**
 	* @brief	Enable timer
@@ -430,30 +438,12 @@ public:
 	/**
 	* @brief	Put device into data retention mode
 	*
+	* @param[in] enable: true to enter data retain mode, 
+	* 					 false to exit from data retain mode
+	* 
 	* @return	0 on success, error code on failure
 	*/
-	int data_retention_mode_enter();
-
-	/**
-	* @brief	Remove device from data retention mode
-	*
-	* @return	0 on success, error code on failure
-	*/
-	int data_retention_mode_exit();
-
-	/**
-	* @brief	Enable I2C bus timeout mechanism
-	*
-	* @return	0 on success, error code on failure
-	*/
-	int i2c_timeout_enable();
-
-	/**
-	* @brief	Disable I2C bus timeout mechanism
-	*
-	* @return	0 on success, error code on failure
-	*/
-	int i2c_timeout_disable();
+	int set_data_retention_mode(bool enable);
 
 	/**
 	* @brief		Enable interrupt
@@ -480,6 +470,13 @@ public:
 	*/
 	int irq_disable_all();
 
+    /**
+    * @brief    Clear the interrupt flag
+    *
+    * @return   0 on success, error code on failure
+    */
+    int clear_irq_flags();
+    
 	/**
 	* @brief	Put device into reset state
 	*
@@ -507,6 +504,57 @@ public:
 	* @return	0 on success, error code on failure
 	*/
 	int rtc_stop();
+
+	/**
+	* @brief		NVRAM size of the part
+	*
+	* @return		0 if part does not have a NVRAM, otherwise returns size
+	*/
+	int nvram_size();
+	
+	/**
+	* @brief		Non-volatile memory write
+	*
+	* @param[out]	buffer Pointer to the data to be written
+	* @param[in]	offset Offset of location in NVRAM
+	* @param[in]	length Number of bytes to write
+	*
+	* @return		0 on success, error code on failure
+	*/
+	int nvram_write(const uint8_t *buffer, int offset, int length);
+
+	/**
+	* @brief		Non-volatile memory read
+	*
+	* @param[in]	buffer Buffer to read in to
+	* @param[in]	offset Offset of location in NVRAM
+	* @param[in]	length Number of bytes to read
+	*
+	* @return		0 on success, error code on failure
+	*/
+	int nvram_read(uint8_t *buffer, int offset, int length);
+
+    /**
+	* @brief		Read from a register.
+	*
+	* @param[in]	reg Address of a register to be read.
+	* @param[out]	value Pointer to save result value.
+	* @param[in]	len Size of result to be read.
+	*
+	* @returns		0 on success, negative error code on failure.
+	*/
+	int read_register(uint8_t reg, uint8_t *dst, uint8_t len=1);
+
+	/**
+	* @brief		Write to a register.
+	*
+	* @param[in]	reg Address of a register to be written.
+	* @param[out]	value Pointer of value to be written to register.
+	* @param[in]	len Size of result to be written.
+	*
+	* @returns		0 on success, negative error code on failure.
+	*/
+	int write_register(uint8_t reg, const uint8_t *src, uint8_t len=1);
 
 private:
 	typedef struct {
@@ -661,101 +709,8 @@ private:
 	    } day_date;
 	} regs_alarm_t;
 
-
-	typedef union {
-	    uint8_t raw;
-	    struct {
-	        uint8_t swrstn : 1; /**< Software reset */
-	        uint8_t rs     : 2; /**< Square wave output frequency selection on CLKOUT pin */
-	        uint8_t osconz : 1; /**< Oscillator is on when set to 0. Oscillator is off when set to 1. */
-	        uint8_t clksel : 2; /**< Selects the CLKIN frequency */
-	        uint8_t intcn  : 1; /**< Interrupt control bit. Selects the direction of INTB/CLKOUT */
-	        uint8_t eclk   : 1; /**< Enable external clock input */
-	    } bits;
-	} reg_config1_t;
-
-	typedef union {
-	    uint8_t raw;
-	    struct {
-	        uint8_t             : 1;
-	        uint8_t set_rtc     : 1;    /**< Set RTC */
-	        uint8_t rd_rtc      : 1;    /**< Read RTC. */
-	        uint8_t i2c_timeout : 1;    /**< I2C timeout Enable */
-	        uint8_t bref        : 2;    /**< BREF sets the analog comparator threshold voltage. */
-	        uint8_t data_reten  : 1;    /**< Sets the circuit into data retention mode. */
-	        uint8_t             : 1;
-	    } bits;
-	} reg_config2_t;
-
-	typedef union {
-	    uint8_t raw;
-	    struct {
-	        uint8_t tfs    : 2; /**< Timer frequency selection */
-	        uint8_t trpt   : 1; /**< Timer repeat mode. It controls the timer interrupt function along with TM. */
-	        uint8_t        : 1;
-	        uint8_t te     : 1; /**< Timer enable */
-	        uint8_t tpause : 1; /**< Timer Pause.*/
-	        uint8_t        : 2;
-	    } bits;
-	} reg_timer_config_t;
-
-	typedef union {
-	    uint8_t raw;
-	    struct {
-	        uint8_t d_mode      : 2;    /**< Sets the mode of the comparator to one of the two following: comparator mode, and power management mode/trickle charger mode. */
-	        uint8_t d_man_sel   : 1;    /**< Default low. When this bit is low, input control block decides which supply to use. When this bit is high, user can manually select whether to use V<sub>CC</sub> or VBACKUP as supply. */
-	        uint8_t d_vback_sel : 1;    /**< : Default low. When this bit is low, and D_MANUAL_SEL is high, V<sub>CC</sub> is switched to supply. When this bit is high, and D_MANUAL_SEL is high, V<sub>BACKUP</sub> is switched to supply. */
-	        uint8_t             : 4;
-	    } bits;
-	} reg_pwr_mgmt_t;
-
-	typedef union {
-	    uint8_t raw;
-	    struct {
-	        uint8_t sync_delay : 2; /* Sync delay to take for the internal countdown chain to reset after the rising edge of Set_RTC */
-	        uint8_t            : 6;
-	    } bits;
-	} reg_clock_sync_t;
-
-	typedef union {
-	    uint8_t raw;
-	    struct {
-	        uint8_t            : 4; 
-	        uint8_t rev_id     : 4; /* Revision Identification Register */
-	    } bits;
-	} reg_rev_id_t;
-
 	TwoWire *m_i2c;
 	uint8_t m_slave_addr;
-
-	enum config_reg2_set_rtc {
-		CONFIG_REG2_SET_RTC_RTCRUN = 0,	/**< Setting this bit to zero doesn't allow to write into the RTC */
-		CONFIG_REG2_SET_RTC_RTCPRGM,	/**< This bit must be set to one, before writing into the RTC. i.e to set the initial time for the RTC this bit must be high. */
-	};
-
-	int tm_hour_to_rtc_hr12(int hours, bool *is_am);
-
-	int rtc_hr12_to_tm_hour(int hours, bool is_am);
-
-	int rtc_regs_to_time(struct tm *time, const regs_rtc_time_t *regs);
-
-	int time_to_rtc_regs(regs_rtc_time_t *regs, const struct tm *time);
-
-	int set_alarm_regs(alarm_no_t alarm_no, const regs_alarm_t *regs);
-
-	int get_alarm_regs(alarm_no_t alarm_no, regs_alarm_t *regs);
-
-	int time_to_alarm_regs(regs_alarm_t &regs, const struct tm *alarm_time);
-
-	int alarm_regs_to_time(struct tm *alarm_time, const regs_alarm_t *regs);
-
-	int set_alarm_period(alarm_no_t alarm_no, regs_alarm_t &regs, alarm_period_t period);
-
-	int set_rtc_time();
-
-	int data_retention_mode_config(int state);
-
-	int i2c_timeout_config(int enable);
 
 	int set_clock_sync_delay(sync_delay_t delay);
 };

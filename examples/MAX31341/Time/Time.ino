@@ -2,20 +2,32 @@
 
 MAX31341 rtc(&Wire, MAX31341_I2C_ADDRESS);
 
-char time_char_buffer[40];
 struct tm rtc_ctime;
+    
+void print_time(void) {
+    char buf[40];
+
+    int ret = rtc.get_time(&rtc_ctime);
+    if (ret) {
+        Serial.println("get_time failed!");
+        return;
+    }
+    
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &rtc_ctime);
+    Serial.println(buf);
+}
 
 void setup() {
     int ret;
 
     Serial.begin(115200);
     Serial.println("---------------------");
-    Serial.println("MAX31341 set get rtc use case example:");
+    Serial.println("Set get rtc use case example:");
     Serial.println("RTC will be set to specific value then it will be read every second");
     Serial.println(" ");
 
     rtc.begin();
-        
+    
     rtc_ctime.tm_year = 121; // years since 1900
     rtc_ctime.tm_mon  = 10;  // 0-11
     rtc_ctime.tm_mday = 24;  // 1-31
@@ -34,15 +46,6 @@ void setup() {
 }
 
 void loop()  {
-    int ret;
-
     delay(1000); // wait a little
-
-    ret = rtc.get_time(&rtc_ctime);
-    if (ret) {
-        Serial.println("get_time failed!");
-    } else {
-        strftime(time_char_buffer, 40, "%F %T", &rtc_ctime);
-        Serial.println(time_char_buffer);
-    }
+    print_time();
 }
