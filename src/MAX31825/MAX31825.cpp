@@ -388,7 +388,7 @@ int MAX31825::read_rom(byte (&code)[8])
     return ret;
 }
 
-int MAX31825::start_meas(void)
+int MAX31825::start_temp_conversion(void)
 {
     int ret = 0;
     
@@ -400,17 +400,17 @@ int MAX31825::start_meas(void)
 int MAX31825::get_status(status_t &stat)
 {
     int ret = 0;
-    byte byt;
+    byte val8;
     
     ret = read_scratchpad();
     if (ret) {
         return ret;
     }
-    byt = SCRATCHPAD_GET_STATUS(m_scratchpad);
+    val8 = SCRATCHPAD_GET_STATUS(m_scratchpad);
     
-    stat.tl_fault  = (byt & MAX31825_F_STATUS_TL_FAULT) ? true: false;
-    stat.th_fault  = (byt & MAX31825_F_STATUS_TH_FAULT) ? true: false;
-    stat.addr      =  byt & 0x3F;
+    stat.bits.addr     = GET_BIT_VAL(val8, MAX31825_F_STATUS_ADDR_POS,     MAX31825_F_STATUS_ADDR);
+    stat.bits.tl_fault = GET_BIT_VAL(val8, MAX31825_F_STATUS_TL_FAULT_POS, MAX31825_F_STATUS_TL_FAULT);
+    stat.bits.th_fault = GET_BIT_VAL(val8, MAX31825_F_STATUS_TH_FAULT_POS, MAX31825_F_STATUS_TH_FAULT);
 
     return ret;
 }
@@ -426,10 +426,32 @@ int MAX31825::get_configuration(reg_cfg_t &cfg)
     }
     val8 = SCRATCHPAD_GET_CFG(m_scratchpad);
 
-    cfg.conversion_rate = (conv_period_t) GET_BIT_VAL(val8, MAX31825_F_CFG_CONV_RATE_POS,  MAX31825_F_CFG_CONV_RATE);
-    cfg.comp_int        = (mode_t)        GET_BIT_VAL(val8, MAX31825_F_CFG_CMP_INT_POS,    MAX31825_F_CFG_CMP_INT);
-    cfg.resolution      = (resolution_t)  GET_BIT_VAL(val8, MAX31825_F_CFG_RESOLUTION_POS, MAX31825_F_CFG_RESOLUTION);  
-    cfg.format          =                 GET_BIT_VAL(val8, MAX31825_F_CFG_FORMAT_POS,     MAX31825_F_CFG_FORMAT);
+    cfg.bits.conversion_rate = GET_BIT_VAL(val8, MAX31825_F_CFG_CONV_RATE_POS,  MAX31825_F_CFG_CONV_RATE);
+    cfg.bits.comp_int        = GET_BIT_VAL(val8, MAX31825_F_CFG_CMP_INT_POS,    MAX31825_F_CFG_CMP_INT);
+    cfg.bits.resolution      = GET_BIT_VAL(val8, MAX31825_F_CFG_RESOLUTION_POS, MAX31825_F_CFG_RESOLUTION);  
+    cfg.bits.format          = GET_BIT_VAL(val8, MAX31825_F_CFG_FORMAT_POS,     MAX31825_F_CFG_FORMAT);
+
+    return ret;
+}
+
+int MAX31825::set_configuration(reg_cfg_t cfg)
+{
+    int  ret = 0;
+    uint8_t val8;
+
+    ret = read_scratchpad();
+    if (ret) {
+        return ret;
+    }
+    
+    val8 = 0;
+    val8 |= SET_BIT_VAL(cfg.bits.conversion_rate, MAX31825_F_CFG_CONV_RATE_POS,  MAX31825_F_CFG_CONV_RATE);
+    val8 |= SET_BIT_VAL(cfg.bits.comp_int,        MAX31825_F_CFG_CMP_INT_POS,    MAX31825_F_CFG_CMP_INT);
+    val8 |= SET_BIT_VAL(cfg.bits.resolution,      MAX31825_F_CFG_RESOLUTION_POS, MAX31825_F_CFG_RESOLUTION);  
+    val8 |= SET_BIT_VAL(cfg.bits.format,          MAX31825_F_CFG_FORMAT_POS,     MAX31825_F_CFG_FORMAT);
+
+    m_scratchpad[MAX31825_R_CFG] = val8;
+    ret = write_scratchpad();
 
     return ret;
 }

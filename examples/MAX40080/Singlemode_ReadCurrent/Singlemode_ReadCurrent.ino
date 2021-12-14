@@ -38,7 +38,7 @@ void setup() {
         Serial.println("Read fifo configuration failed!");
     }
 
-    g_fifo_cfg.store_iv = MAX40080::MEAS_CURRENT_ONLY;
+    g_fifo_cfg.bits.store_iv = MAX40080::MEAS_CURRENT_ONLY;
     ret = sensor.set_fifo_configuration(g_fifo_cfg);
     if (ret) {
         Serial.println("Set fifo configuration failed!");
@@ -52,9 +52,9 @@ void setup() {
         Serial.println("Read configuration failed!");
     }
 
-    g_cfg.mode = MAX40080::OP_MODE_SINGLE_CONVERTION;
-    g_cfg.digital_filter = MAX40080::AVERAGE_1_SAMPLE;
-    g_cfg.input_range = MAX40080::INPUT_RANGE_50mV;
+    g_cfg.bits.mode = MAX40080::OP_MODE_SINGLE_CONVERTION;
+    g_cfg.bits.digital_filter = MAX40080::AVERAGE_1_SAMPLE;
+    g_cfg.bits.input_range = MAX40080::INPUT_RANGE_50mV;
     
     ret = sensor.set_configuration(g_cfg);
     if (ret) {
@@ -72,7 +72,7 @@ void loop()  {
     
     ret = sensor.get_status(g_stat);
     if (ret == 0) {
-        if (g_stat.conv_ready) {
+        if (g_stat.bits.conv_ready) {
             float current = 0.0f;
 
             ret = sensor.get_current(current);

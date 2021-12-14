@@ -48,7 +48,7 @@ void setup()  {
         Serial.println(temp_high, 2);
     }
 
-    ret = temp_sensor.start_meas(MAX31827::PERIOD_4_DIV_1SEC);
+    ret = temp_sensor.start_temp_conversion(MAX31827::PERIOD_4_DIV_1SEC);
     if (ret) {
         Serial.println("Start measurement failed!");
     } else {

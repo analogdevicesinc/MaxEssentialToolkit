@@ -28,15 +28,15 @@ void loop()  {
         Serial.println("Read status failed!");
     } else {
         Serial.println("----------- Status Register -----------");
-        Serial.print("Wakeup          : ");  Serial.println(g_stat.wakeup);
-        Serial.print("Conversion Ready: ");  Serial.println(g_stat.conv_ready);
-        Serial.print("Overflow I      : ");  Serial.println(g_stat.over_i);
-        Serial.print("Overflow V      : ");  Serial.println(g_stat.over_v);
-        Serial.print("Underflow V     : ");  Serial.println(g_stat.under_v);
-        Serial.print("I2C Timeout     : ");  Serial.println(g_stat.i2c_timeout);
-        Serial.print("FIFO Alarm      : ");  Serial.println(g_stat.fifo_alarm);
-        Serial.print("FIFO Overflow   : ");  Serial.println(g_stat.fifo_overflow);
-        Serial.print("FIFO Data Count : ");  Serial.println(g_stat.fifo_data_count);
+        Serial.print("Wakeup          : ");  Serial.println(g_stat.bits.wakeup);
+        Serial.print("Conversion Ready: ");  Serial.println(g_stat.bits.conv_ready);
+        Serial.print("Overflow I      : ");  Serial.println(g_stat.bits.over_i);
+        Serial.print("Overflow V      : ");  Serial.println(g_stat.bits.over_v);
+        Serial.print("Underflow V     : ");  Serial.println(g_stat.bits.under_v);
+        Serial.print("I2C Timeout     : ");  Serial.println(g_stat.bits.i2c_timeout);
+        Serial.print("FIFO Alarm      : ");  Serial.println(g_stat.bits.fifo_alarm);
+        Serial.print("FIFO Overflow   : ");  Serial.println(g_stat.bits.fifo_overflow);
+        Serial.print("FIFO Data Count : ");  Serial.println(g_stat.bits.fifo_data_count);
     }
 
     ret = sensor.get_configuration(g_cfg);
@@ -44,14 +44,14 @@ void loop()  {
         Serial.println("Read configuration failed!");
     } else {
         Serial.println("----------- Configuration Register -----------");
-        Serial.print("Mode            : ");   Serial.println(g_cfg.mode);
-        Serial.print("I2C Timeout     : ");   Serial.println(g_cfg.i2c_timeout);
-        Serial.print("Alert           : ");   Serial.println(g_cfg.alert);
-        Serial.print("PEC             : ");   Serial.println(g_cfg.pec);
-        Serial.print("Input Range     : ");   Serial.println(g_cfg.input_range);
-        Serial.print("Stay HS Mode    : ");   Serial.println(g_cfg.stay_hs_mode);
-        Serial.print("ADC Sample Rate : ");   Serial.println(g_cfg.adc_sample_rate);
-        Serial.print("Digital Filter  : ");   Serial.println(g_cfg.digital_filter);
+        Serial.print("Mode            : ");   Serial.println(g_cfg.bits.mode);
+        Serial.print("I2C Timeout     : ");   Serial.println(g_cfg.bits.i2c_timeout);
+        Serial.print("Alert           : ");   Serial.println(g_cfg.bits.alert);
+        Serial.print("PEC             : ");   Serial.println(g_cfg.bits.pec);
+        Serial.print("Input Range     : ");   Serial.println(g_cfg.bits.input_range);
+        Serial.print("Stay HS Mode    : ");   Serial.println(g_cfg.bits.stay_hs_mode);
+        Serial.print("ADC Sample Rate : ");   Serial.println(g_cfg.bits.adc_sample_rate);
+        Serial.print("Digital Filter  : ");   Serial.println(g_cfg.bits.digital_filter);
     }
     
     ret = sensor.get_fifo_configuration(g_fifo_cfg);
@@ -59,9 +59,9 @@ void loop()  {
         Serial.println("Read fifo configuration failed!");
     } else {
        Serial.println("----------- FIFO Configuration Register -----------");
-       Serial.print("Store_IV        : ");   Serial.println(g_fifo_cfg.store_iv);
-       Serial.print("Overflow Warning: ");   Serial.println(g_fifo_cfg.overflow_warning);
-       Serial.print("Rollover        : ");   Serial.println(g_fifo_cfg.rollover);
-       Serial.print("Flush           : ");   Serial.println(g_fifo_cfg.flush);
+       Serial.print("Store_IV        : ");   Serial.println(g_fifo_cfg.bits.store_iv);
+       Serial.print("Overflow Warning: ");   Serial.println(g_fifo_cfg.bits.overflow_warning);
+       Serial.print("Rollover        : ");   Serial.println(g_fifo_cfg.bits.rollover);
+       Serial.print("Flush           : ");   Serial.println(g_fifo_cfg.bits.flush);
     } 
 }

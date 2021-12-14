@@ -23,14 +23,14 @@ void setup()  {
         Serial.println("Get configuration failed!");    
     }
 
-    switch (cfg.resolution) {
+    switch (cfg.bits.resolution) {
         case MAX31827::RESOLUTION_8_BIT :  Serial.println("Current Resolution  8 bits");   break;
         case MAX31827::RESOLUTION_9_BIT :  Serial.println("Current Resolution  9 bits");   break;
         case MAX31827::RESOLUTION_10_BIT:  Serial.println("Current Resolution 10 bits");   break;
         case MAX31827::RESOLUTION_12_BIT:  Serial.println("Current Resolution 12 bits");   break;
     }
     
-    if (cfg.resolution != MAX31827::RESOLUTION_12_BIT) { // Update resolution if it is not 12bits
+    if (cfg.bits.resolution != MAX31827::RESOLUTION_12_BIT) { // Update resolution if it is not 12bits
         ret = temp_sensor.set_resolution(MAX31827::RESOLUTION_12_BIT);
         if (ret) {
             Serial.println("Resolution set failed!");    
@@ -46,7 +46,7 @@ void setup()  {
 void loop()  {
     int ret;
 
-    ret = temp_sensor.start_meas(MAX31827::PERIOD_ONE_SHOT);
+    ret = temp_sensor.start_temp_conversion(MAX31827::PERIOD_ONE_SHOT);
     if (ret) {
         Serial.println("Start measurement failed!");
         return;

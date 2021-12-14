@@ -85,10 +85,10 @@ void setup()  {
         Serial.println("Get configuration failed!");
     } else {
         Serial.println("--------- Configuration Register (BIN Format) ---------");
-        Serial.print("Convertion Rate: ");      Serial.println(cfg.conversion_rate, BIN);
-        Serial.print("COMP/INT       : ");      Serial.println(cfg.comp_int, BIN);
-        Serial.print("Resolution     : ");      Serial.println(cfg.resolution, BIN);
-        Serial.print("Format         : ");      Serial.println(cfg.format, BIN);
+        Serial.print("Convertion Rate: ");      Serial.println(cfg.bits.conversion_rate, BIN);
+        Serial.print("COMP/INT       : ");      Serial.println(cfg.bits.comp_int, BIN);
+        Serial.print("Resolution     : ");      Serial.println(cfg.bits.resolution, BIN);
+        Serial.print("Format         : ");      Serial.println(cfg.bits.format, BIN);
     }
 
     Serial.println("---------------------");
@@ -97,7 +97,7 @@ void setup()  {
 
 void loop()  {
 
-    int ret = temp_sensor.start_meas();
+    int ret = temp_sensor.start_temp_conversion();
     if (ret) {
         Serial.println("Start measurement failed!");
     }
@@ -117,11 +117,11 @@ void loop()  {
             return;
         }
     
-        if (status.th_fault) {
+        if (status.bits.th_fault) {
             Serial.println("---High temperature alarm detected.---");
         }
     
-        if (status.tl_fault) {
+        if (status.bits.tl_fault) {
             Serial.println("---Low temperature alarm detected.---");
         }
           

@@ -1,7 +1,7 @@
 #include <MaxEssentialToolkit.h>
 
 MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
-MAX31889::status_t sensor_status;
+MAX31889::status_t g_status;
 
 void print_sensor_info()  {
     int ret;
@@ -42,7 +42,7 @@ void setup()  {
 void loop()  { 
     int ret;
 
-    ret = temp_sensor.start_meas();
+    ret = temp_sensor.start_temp_conversion();
     if (ret) {
         Serial.println("Restart measurement failed!");
         return;
@@ -50,16 +50,16 @@ void loop()  {
 
     delay(500);  // wait a little
     
-    ret = temp_sensor.get_status(sensor_status);
+    ret = temp_sensor.get_status(g_status);
     if (ret) {
         Serial.println("Status read failed!");
         return;
     }
 
-    if (sensor_status.temp_ready) {
+    if (g_status.bits.temp_rdy) {
         float temp = 0;
 
-        ret = temp_sensor.read_samples(&temp, 1);
+        ret = temp_sensor.get_temp(&temp, 1);
         if (ret) {
             Serial.println("Temperature read failed!");
         } else {

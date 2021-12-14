@@ -82,7 +82,7 @@ void loop()  {
         int ret;
         float temp = 0;
 
-        ret = temp_sensor.read_samples(&temp, 1);
+        ret = temp_sensor.get_temp(&temp, 1);
         if (ret) {
             Serial.println("Temprature read failed!");
         } else {

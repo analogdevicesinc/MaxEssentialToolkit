@@ -50,9 +50,9 @@ void loop()  {
     int ret;
     float temp;
     
-    ret = temp_sensor.start_meas();
+    ret = temp_sensor.start_temp_conversion();
     if (ret) {
-        Serial.println("start_meas failed!");
+        Serial.println("start_temp_conversion failed!");
     }
     
     delay(1000); // wait a little

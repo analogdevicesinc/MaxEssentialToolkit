@@ -46,7 +46,7 @@ void setup() {
         Serial.println("Read fifo configuration failed!");
     }
 
-    g_fifo_cfg.store_iv = MAX40080::MEAS_VOLTAGE_ONLY;
+    g_fifo_cfg.bits.store_iv = MAX40080::MEAS_VOLTAGE_ONLY;
     ret = sensor.set_fifo_configuration(g_fifo_cfg);
     if (ret) {
         Serial.println("Set fifo configuration failed!");
@@ -60,8 +60,8 @@ void setup() {
         Serial.println("Read configuration failed!");
     }
 
-    g_cfg.mode = MAX40080::OP_MODE_SINGLE_CONVERTION;
-    g_cfg.digital_filter = MAX40080::AVERAGE_1_SAMPLE;
+    g_cfg.bits.mode = MAX40080::OP_MODE_SINGLE_CONVERTION;
+    g_cfg.bits.digital_filter = MAX40080::AVERAGE_1_SAMPLE;
     
     ret = sensor.set_configuration(g_cfg);
     if (ret) {

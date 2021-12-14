@@ -107,7 +107,7 @@ int MAX40080::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
 
     // Read
     int r_Len = len;
-    if (m_reg_cfg.pec) {
+    if (m_reg_cfg.bits.pec) {
         r_Len += 1; // +1 for PEC byte
     }
 
@@ -121,7 +121,7 @@ int MAX40080::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
 
     //
     if (counter == r_Len) {
-        if (m_reg_cfg.pec) {
+        if (m_reg_cfg.bits.pec) {
             uint8_t crc = 0;
             uint8_t addr = m_slave_addr<<1;
 
@@ -154,7 +154,7 @@ int MAX40080::write_register(uint8_t reg, const uint8_t *buf, uint8_t len/*=1*/)
     m_i2c->write(reg);
     m_i2c->write(buf, len);
 
-    if (m_reg_cfg.pec) {
+    if (m_reg_cfg.bits.pec) {
         uint8_t crc = 0;
         uint8_t addr = m_slave_addr<<1;
 
@@ -207,7 +207,7 @@ uint16_t MAX40080::convert_current_2_count(float current)
     uint16_t count;
     float step_per_bit;
 
-    if (m_reg_cfg.input_range == INPUT_RANGE_50mV) {
+    if (m_reg_cfg.bits.input_range == INPUT_RANGE_50mV) {
         step_per_bit = 0.050 / 4095.0;
     } else {
         step_per_bit = 0.010 / 4095.0;
@@ -229,7 +229,7 @@ float MAX40080::convert_count_2_current(uint16_t count)
     float current;
     float step_per_bit;
 
-    if (m_reg_cfg.input_range == INPUT_RANGE_50mV) {
+    if (m_reg_cfg.bits.input_range == INPUT_RANGE_50mV) {
         step_per_bit = 0.050f / 4095.0f;
     } else {
         step_per_bit = 0.010f / 4095.0f;
@@ -268,14 +268,14 @@ void MAX40080::begin(void)
     /* 
         set default values, for more info check UG
     */
-    m_reg_cfg.pec = true; // on default pec enable
-    m_reg_cfg.mode = OP_MODE_STANDBY;
-    m_reg_cfg.input_range = INPUT_RANGE_10mV; //INPUT_RANGE_10mV
-    m_reg_cfg.i2c_timeout = false;
-    m_reg_cfg.alert = false;
-    m_reg_cfg.stay_hs_mode = false;
-    m_reg_cfg.adc_sample_rate = SAMPLE_RATE_15_KSPS;
-    m_reg_cfg.digital_filter = AVERAGE_1_SAMPLE;
+    m_reg_cfg.bits.pec = true; // on default pec enable
+    m_reg_cfg.bits.mode = OP_MODE_STANDBY;
+    m_reg_cfg.bits.input_range = INPUT_RANGE_10mV; //INPUT_RANGE_10mV
+    m_reg_cfg.bits.i2c_timeout = false;
+    m_reg_cfg.bits.alert = false;
+    m_reg_cfg.bits.stay_hs_mode = false;
+    m_reg_cfg.bits.adc_sample_rate = SAMPLE_RATE_15_KSPS;
+    m_reg_cfg.bits.digital_filter = AVERAGE_1_SAMPLE;
 }
 
 int MAX40080::get_status(reg_status_t &stat)
@@ -291,15 +291,15 @@ int MAX40080::get_status(reg_status_t &stat)
     
     val16 = (buf[1]<<8) | buf[0];
     
-    stat.wakeup          = GET_BIT_VAL(val16, MAX40080_F_STATUS_WAKEUP_POS,          MAX40080_F_STATUS_WAKEUP);
-    stat.conv_ready      = GET_BIT_VAL(val16, MAX40080_F_STATUS_CONV_READY_POS,      MAX40080_F_STATUS_CONV_READY);
-    stat.over_i          = GET_BIT_VAL(val16, MAX40080_F_STATUS_OVERFLOW_I_POS,      MAX40080_F_STATUS_OVERFLOW_I);
-    stat.over_v          = GET_BIT_VAL(val16, MAX40080_F_STATUS_OVERFLOW_V_POS,      MAX40080_F_STATUS_OVERFLOW_V);
-    stat.under_v         = GET_BIT_VAL(val16, MAX40080_F_STATUS_UNDERFLOW_V_POS,     MAX40080_F_STATUS_UNDERFLOW_V);
-    stat.i2c_timeout     = GET_BIT_VAL(val16, MAX40080_F_STATUS_I2C_TIMEOUT_POS,     MAX40080_F_STATUS_I2C_TIMEOUT);
-    stat.fifo_alarm      = GET_BIT_VAL(val16, MAX40080_F_STATUS_FIFO_ALARM_POS,      MAX40080_F_STATUS_FIFO_ALARM);
-    stat.fifo_overflow   = GET_BIT_VAL(val16, MAX40080_F_STATUS_FIFO_OVERFLOW_POS,   MAX40080_F_STATUS_FIFO_OVERFLOW);
-    stat.fifo_data_count = GET_BIT_VAL(val16, MAX40080_F_STATUS_FIFO_DATA_COUNT_POS, MAX40080_F_STATUS_FIFO_DATA_COUNT);
+    stat.bits.wakeup          = GET_BIT_VAL(val16, MAX40080_F_STATUS_WAKEUP_POS,          MAX40080_F_STATUS_WAKEUP);
+    stat.bits.conv_ready      = GET_BIT_VAL(val16, MAX40080_F_STATUS_CONV_READY_POS,      MAX40080_F_STATUS_CONV_READY);
+    stat.bits.over_i          = GET_BIT_VAL(val16, MAX40080_F_STATUS_OVERFLOW_I_POS,      MAX40080_F_STATUS_OVERFLOW_I);
+    stat.bits.over_v          = GET_BIT_VAL(val16, MAX40080_F_STATUS_OVERFLOW_V_POS,      MAX40080_F_STATUS_OVERFLOW_V);
+    stat.bits.under_v         = GET_BIT_VAL(val16, MAX40080_F_STATUS_UNDERFLOW_V_POS,     MAX40080_F_STATUS_UNDERFLOW_V);
+    stat.bits.i2c_timeout     = GET_BIT_VAL(val16, MAX40080_F_STATUS_I2C_TIMEOUT_POS,     MAX40080_F_STATUS_I2C_TIMEOUT);
+    stat.bits.fifo_alarm      = GET_BIT_VAL(val16, MAX40080_F_STATUS_FIFO_ALARM_POS,      MAX40080_F_STATUS_FIFO_ALARM);
+    stat.bits.fifo_overflow   = GET_BIT_VAL(val16, MAX40080_F_STATUS_FIFO_OVERFLOW_POS,   MAX40080_F_STATUS_FIFO_OVERFLOW);
+    stat.bits.fifo_data_count = GET_BIT_VAL(val16, MAX40080_F_STATUS_FIFO_DATA_COUNT_POS, MAX40080_F_STATUS_FIFO_DATA_COUNT);
     
     return ret;
 }
@@ -364,14 +364,14 @@ int MAX40080::get_configuration(reg_cfg_t &cfg)
 
     val16 = (buf[1]<<8) | buf[0];
     
-    cfg.mode            = (operation_mode_t) GET_BIT_VAL(val16, MAX40080_F_CFG_MODE_POS,            MAX40080_F_CFG_MODE);
-    cfg.i2c_timeout     =                    GET_BIT_VAL(val16, MAX40080_F_CFG_I2C_TIMEOUT_POS,     MAX40080_F_CFG_I2C_TIMEOUT);
-    cfg.alert           =                    GET_BIT_VAL(val16, MAX40080_F_CFG_ALERT_POS,           MAX40080_F_CFG_ALERT);
-    cfg.pec             =                    GET_BIT_VAL(val16, MAX40080_F_CFG_PEC_POS,             MAX40080_F_CFG_PEC);
-    cfg.input_range     = (input_range_t)    GET_BIT_VAL(val16, MAX40080_F_CFG_INPUT_RANGE_POS,     MAX40080_F_CFG_INPUT_RANGE);
-    cfg.stay_hs_mode    =                    GET_BIT_VAL(val16, MAX40080_F_CFG_STAY_HS_MODE_POS,    MAX40080_F_CFG_STAY_HS_MODE);
-    cfg.adc_sample_rate = (adc_sample_rate_t)GET_BIT_VAL(val16, MAX40080_F_CFG_ADC_SAMPLE_RATE_POS, MAX40080_F_CFG_ADC_SAMPLE_RATE);
-    cfg.digital_filter  = (digital_filter_t) GET_BIT_VAL(val16, MAX40080_F_CFG_DIGITAL_FILTER_POS,  MAX40080_F_CFG_DIGITAL_FILTER);
+    cfg.bits.mode            = GET_BIT_VAL(val16, MAX40080_F_CFG_MODE_POS,            MAX40080_F_CFG_MODE);
+    cfg.bits.i2c_timeout     = GET_BIT_VAL(val16, MAX40080_F_CFG_I2C_TIMEOUT_POS,     MAX40080_F_CFG_I2C_TIMEOUT);
+    cfg.bits.alert           = GET_BIT_VAL(val16, MAX40080_F_CFG_ALERT_POS,           MAX40080_F_CFG_ALERT);
+    cfg.bits.pec             = GET_BIT_VAL(val16, MAX40080_F_CFG_PEC_POS,             MAX40080_F_CFG_PEC);
+    cfg.bits.input_range     = GET_BIT_VAL(val16, MAX40080_F_CFG_INPUT_RANGE_POS,     MAX40080_F_CFG_INPUT_RANGE);
+    cfg.bits.stay_hs_mode    = GET_BIT_VAL(val16, MAX40080_F_CFG_STAY_HS_MODE_POS,    MAX40080_F_CFG_STAY_HS_MODE);
+    cfg.bits.adc_sample_rate = GET_BIT_VAL(val16, MAX40080_F_CFG_ADC_SAMPLE_RATE_POS, MAX40080_F_CFG_ADC_SAMPLE_RATE);
+    cfg.bits.digital_filter  = GET_BIT_VAL(val16, MAX40080_F_CFG_DIGITAL_FILTER_POS,  MAX40080_F_CFG_DIGITAL_FILTER);
     
     if (ret == 0) {
         m_reg_cfg = cfg;
@@ -386,14 +386,14 @@ int MAX40080::set_configuration(reg_cfg_t cfg)
     uint8_t buf[2];
     uint16_t val16 = 0;
      
-    val16 |= SET_BIT_VAL(cfg.mode,            MAX40080_F_CFG_MODE_POS,            MAX40080_F_CFG_MODE);
-    val16 |= SET_BIT_VAL(cfg.i2c_timeout,     MAX40080_F_CFG_I2C_TIMEOUT_POS,     MAX40080_F_CFG_I2C_TIMEOUT);
-    val16 |= SET_BIT_VAL(cfg.alert,           MAX40080_F_CFG_ALERT_POS,           MAX40080_F_CFG_ALERT);
-    val16 |= SET_BIT_VAL(cfg.pec,             MAX40080_F_CFG_PEC_POS,             MAX40080_F_CFG_PEC);
-    val16 |= SET_BIT_VAL(cfg.input_range,     MAX40080_F_CFG_INPUT_RANGE_POS,     MAX40080_F_CFG_INPUT_RANGE);
-    val16 |= SET_BIT_VAL(cfg.stay_hs_mode,    MAX40080_F_CFG_STAY_HS_MODE_POS,    MAX40080_F_CFG_STAY_HS_MODE);
-    val16 |= SET_BIT_VAL(cfg.adc_sample_rate, MAX40080_F_CFG_ADC_SAMPLE_RATE_POS, MAX40080_F_CFG_ADC_SAMPLE_RATE);
-    val16 |= SET_BIT_VAL(cfg.digital_filter,  MAX40080_F_CFG_DIGITAL_FILTER_POS,  MAX40080_F_CFG_DIGITAL_FILTER);
+    val16 |= SET_BIT_VAL(cfg.bits.mode,            MAX40080_F_CFG_MODE_POS,            MAX40080_F_CFG_MODE);
+    val16 |= SET_BIT_VAL(cfg.bits.i2c_timeout,     MAX40080_F_CFG_I2C_TIMEOUT_POS,     MAX40080_F_CFG_I2C_TIMEOUT);
+    val16 |= SET_BIT_VAL(cfg.bits.alert,           MAX40080_F_CFG_ALERT_POS,           MAX40080_F_CFG_ALERT);
+    val16 |= SET_BIT_VAL(cfg.bits.pec,             MAX40080_F_CFG_PEC_POS,             MAX40080_F_CFG_PEC);
+    val16 |= SET_BIT_VAL(cfg.bits.input_range,     MAX40080_F_CFG_INPUT_RANGE_POS,     MAX40080_F_CFG_INPUT_RANGE);
+    val16 |= SET_BIT_VAL(cfg.bits.stay_hs_mode,    MAX40080_F_CFG_STAY_HS_MODE_POS,    MAX40080_F_CFG_STAY_HS_MODE);
+    val16 |= SET_BIT_VAL(cfg.bits.adc_sample_rate, MAX40080_F_CFG_ADC_SAMPLE_RATE_POS, MAX40080_F_CFG_ADC_SAMPLE_RATE);
+    val16 |= SET_BIT_VAL(cfg.bits.digital_filter,  MAX40080_F_CFG_DIGITAL_FILTER_POS,  MAX40080_F_CFG_DIGITAL_FILTER);
     
     buf[0] = (uint8_t) (val16 & 0xff);
     buf[1] = (uint8_t) ((val16>>8) & 0xff);
@@ -418,10 +418,10 @@ int MAX40080::get_fifo_configuration(reg_fifo_cfg_t &cfg)
     }
     val16 = (buf[1]<<8) | buf[0];
 
-    cfg.store_iv         = (measure_type_t)GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_STORE_IV_POS,         MAX40080_F_FIFO_CFG_STORE_IV);
-    cfg.overflow_warning =                 GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_OVERFLOW_WARNING_POS, MAX40080_F_FIFO_CFG_OVERFLOW_WARNING);
-    cfg.rollover         =                 GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_ROLLOVER_POS,         MAX40080_F_FIFO_CFG_ROLLOVER);
-    cfg.flush            =                 GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_FLUSH_POS,            MAX40080_F_FIFO_CFG_FLUSH);
+    cfg.bits.store_iv         = GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_STORE_IV_POS,         MAX40080_F_FIFO_CFG_STORE_IV);
+    cfg.bits.overflow_warning = GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_OVERFLOW_WARNING_POS, MAX40080_F_FIFO_CFG_OVERFLOW_WARNING);
+    cfg.bits.rollover         = GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_ROLLOVER_POS,         MAX40080_F_FIFO_CFG_ROLLOVER);
+    cfg.bits.flush            = GET_BIT_VAL(val16,  MAX40080_F_FIFO_CFG_FLUSH_POS,            MAX40080_F_FIFO_CFG_FLUSH);
 
     return ret;
 }
@@ -432,10 +432,10 @@ int MAX40080::set_fifo_configuration(reg_fifo_cfg_t cfg)
     uint8_t buf[2];
     uint16_t val16 = 0;
 
-    val16 |= SET_BIT_VAL(cfg.store_iv,         MAX40080_F_FIFO_CFG_STORE_IV_POS,         MAX40080_F_FIFO_CFG_STORE_IV);
-    val16 |= SET_BIT_VAL(cfg.overflow_warning, MAX40080_F_FIFO_CFG_OVERFLOW_WARNING_POS, MAX40080_F_FIFO_CFG_OVERFLOW_WARNING);
-    val16 |= SET_BIT_VAL(cfg.rollover,         MAX40080_F_FIFO_CFG_ROLLOVER_POS,         MAX40080_F_FIFO_CFG_ROLLOVER);
-    val16 |= SET_BIT_VAL(cfg.flush,            MAX40080_F_FIFO_CFG_FLUSH_POS,            MAX40080_F_FIFO_CFG_FLUSH);
+    val16 |= SET_BIT_VAL(cfg.bits.store_iv,         MAX40080_F_FIFO_CFG_STORE_IV_POS,         MAX40080_F_FIFO_CFG_STORE_IV);
+    val16 |= SET_BIT_VAL(cfg.bits.overflow_warning, MAX40080_F_FIFO_CFG_OVERFLOW_WARNING_POS, MAX40080_F_FIFO_CFG_OVERFLOW_WARNING);
+    val16 |= SET_BIT_VAL(cfg.bits.rollover,         MAX40080_F_FIFO_CFG_ROLLOVER_POS,         MAX40080_F_FIFO_CFG_ROLLOVER);
+    val16 |= SET_BIT_VAL(cfg.bits.flush,            MAX40080_F_FIFO_CFG_FLUSH_POS,            MAX40080_F_FIFO_CFG_FLUSH);
     
     buf[0] = (uint8_t) (val16 & 0xff);
     buf[1] = (uint8_t) ((val16>>8) & 0xff);

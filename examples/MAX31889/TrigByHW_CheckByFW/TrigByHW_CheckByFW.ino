@@ -2,7 +2,7 @@
 
 
 MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
-MAX31889::status_t sensor_status;
+MAX31889::status_t g_status;
 // Pin 46 is P5.6 (for MAX32630FTHR Board)
 // More detail here: https://os.mbed.com/platforms/MAX32630FTHR/
 int pin_trigger = 46; // Connects to GPIO1 pin of MAX31889
@@ -66,16 +66,16 @@ void loop() {
 
     delay(500); // wait a little
     
-    ret = temp_sensor.get_status(sensor_status);
+    ret = temp_sensor.get_status(g_status);
     if (ret) {
         Serial.println("Status read failed!");
         return;
     }
 
-    if (sensor_status.temp_ready) {
+    if (g_status.bits.temp_rdy) {
         float temp = 0;
         
-        ret = temp_sensor.read_samples(&temp, 1);
+        ret = temp_sensor.get_temp(&temp, 1);
         if (ret) {
             Serial.println("Temprature read failed!");
         } else {

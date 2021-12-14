@@ -115,34 +115,46 @@ class MAX40080 {
             AVERAGE_128_SAMPLES    = 5  // Average among 128 samples
          } digital_filter_t;
 
-        typedef struct {
-            bool    wakeup;         // Wakeup current reached
-            bool    conv_ready;     // Indicated ADC convertion completed
-            bool    over_i;         //  
-            bool    over_v;         //  
-            bool    under_v;        //  
-            bool    i2c_timeout;    //  
-            bool    fifo_alarm;     //  
-            bool    fifo_overflow;  // When set to 1 it indicates that the FIFO is completely full with 64 data on it.
-            uint8_t fifo_data_count;// 6-bit counter that indicates the number of data that are currently inside the FIFO. Range is from 0 to 63.
+         typedef union {
+            uint16_t raw;
+            struct {
+                uint16_t wakeup          :1; // Wakeup current reached
+                uint16_t conv_ready      :1; // Indicated ADC convertion completed
+                uint16_t over_i          :1; //  
+                uint16_t over_v          :1; //  
+                uint16_t under_v         :1; //  
+                uint16_t i2c_timeout     :1; //  
+                uint16_t fifo_alarm      :1; //  
+                uint16_t fifo_overflow   :1; // When set to 1 it indicates that the FIFO is completely full with 64 data on it.
+                uint16_t fifo_data_count :6; // 6-bit counter that indicates the number of data that are currently inside the FIFO. Range is from 0 to 63.
+                uint16_t                 :2; // not used
+            } bits;
         } reg_status_t;
 
-        typedef struct {
-            operation_mode_t   mode;
-            bool               i2c_timeout;
-            bool               alert;
-            bool               pec;
-            input_range_t      input_range;
-            bool               stay_hs_mode;
-            adc_sample_rate_t  adc_sample_rate;
-            digital_filter_t   digital_filter;
+         typedef union {
+            uint16_t raw;
+            struct {
+                uint16_t  mode            :3; // operation_mode_t 
+                uint16_t  i2c_timeout     :1; //               
+                uint16_t  alert           :1; //               
+                uint16_t  pec             :1; //               
+                uint16_t  input_range     :1; // input_range_t    
+                uint16_t  stay_hs_mode    :1; //               
+                uint16_t  adc_sample_rate :4; // adc_sample_rate_t
+                uint16_t  digital_filter  :3; // digital_filter_t
+                uint16_t                  :1; // not used 
+            } bits;
         } reg_cfg_t;
         
-        typedef struct {
-            measure_type_t store_iv; // These two bits determine whether the device measures and stores into the FIFO either current or voltage or both current and voltage.
-            uint8_t overflow_warning;// Overflow threshold
-            bool rollover;           // Roll over
-            bool flush;              // flush fifo               
+        typedef union {
+            uint16_t raw;
+            struct {
+                uint16_t  store_iv         :2; // measure_type_t 
+                uint16_t                   :6; //       
+                uint16_t  overflow_warning :6; // Overflow threshold           
+                uint16_t  rollover         :1; //               
+                uint16_t  flush            :1; // flush fifo
+            } bits;
         } reg_fifo_cfg_t;
         
         // constructer

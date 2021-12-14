@@ -50,12 +50,6 @@
  */
 class MAX31825 {
     public:
-        typedef struct {
-            bool th_fault;
-            bool tl_fault;
-            byte addr;
-        } status_t;
-
         typedef enum {
             PERIOD_0_SHUTDOWN  = 0,
             PERIOD_1_DIV_64SEC = 1,
@@ -85,12 +79,26 @@ class MAX31825 {
             ADDRESSING_USE_ADD1_ADD0 // Use resistor that connected to ADDR0
         } addressing_mode_t;
 
-        typedef struct {
-            conv_period_t conversion_rate;
-            mode_t        comp_int;
-            resolution_t  resolution;
-            uint8_t       format;
+        typedef union {
+            uint8_t raw;
+            struct {
+                uint8_t addr     : 6; // Address information which selected by the resistor value
+                uint8_t tl_fault : 1; // 
+                uint8_t th_fault : 1; //
+            } bits;
+        } status_t;
+
+        typedef union {
+            uint8_t raw;
+            struct {
+                uint8_t conversion_rate : 3; // conv_period_t
+                uint8_t                 : 1; // 
+                uint8_t comp_int        : 1; // mode_t
+                uint8_t resolution      : 2; // resolution_t
+                uint8_t format          : 1; // 
+            } bits;
         } reg_cfg_t;
+
 
         MAX31825(OneWire *onewire);
         MAX31825(TwoWire *i2c, byte i2c_addr);
@@ -100,8 +108,11 @@ class MAX31825 {
         int  read_rom(byte (&rom_code)[8]);
         //
         int get_status(status_t &stat);
+        int get_configuration(reg_cfg_t &cfg);
+        int set_configuration(reg_cfg_t cfg);
+
         //
-        int start_meas();
+        int start_temp_conversion();
         int get_temp(float &tmp);
         int set_alarm(float temp_low, float temp_high);
         int get_alarm(float &temp_low, float &temp_high);
@@ -110,8 +121,6 @@ class MAX31825 {
         int set_extend_mode(bool enable);
         int set_resolution(resolution_t res);
         int set_cmp_int_mode(mode_t mode);
-        //
-        int get_configuration(reg_cfg_t &cfg);
         
     private:
         DS2482   *m_ds2482;

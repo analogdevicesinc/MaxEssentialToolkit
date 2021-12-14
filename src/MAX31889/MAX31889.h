@@ -52,13 +52,6 @@
 class MAX31889
 {
     public:
-        typedef struct {
-            uint8_t fifo_almost_full;
-            uint8_t temp_low;
-            uint8_t temp_high;
-            uint8_t temp_ready; 
-        } status_t;
-
         typedef enum {
             GPIO_NUM_0 = 0, // GPIO0
             GPIO_NUM_1,     // GPIO1
@@ -81,16 +74,34 @@ class MAX31889
             INT_FIFO_ALMOST_FULL = MAX31889_F_INT_EN_A_FULL
         } int_mode_t;
 
+        typedef union {
+            uint8_t raw;
+            struct {
+                uint8_t temp_rdy  : 1; // temperature ready
+                uint8_t temp_high : 1; // temp high
+                uint8_t temp_low  : 1; // temp low
+                uint8_t           : 4; // not used
+                uint8_t a_full    : 1; // almost full
+            } bits;
+        } status_t;
+
+        typedef union {
+            uint8_t raw;
+            struct {
+                uint8_t               : 1; // not used
+                uint8_t fifo_ro       : 1; // fifo roolover
+                uint8_t a_full_type   : 1; // almost full type
+                uint8_t fifo_stat_clr : 1; // fifo stat clear
+                uint8_t flush_fifo    : 1; // 
+                uint8_t               : 3; // not used
+            } bits;
+        } fifo_cfg_t;
+
         typedef struct {
             uint8_t rom_id[6];
             uint8_t part_id; 
         } id_t;
 
-        typedef struct {
-            uint8_t roolover;
-            uint8_t allmost_full_type;
-            uint8_t stat_clear; 
-        } fifo_cfg_t;
 
         // constructer
         MAX31889(TwoWire *i2c, uint8_t i2c_addr = MAX31889_DEFAULT_I2C_ADDR);
@@ -109,9 +120,9 @@ class MAX31889
         int get_alarm_temp(float &temp_low, float &temp_high);
         int set_alarm_temp(float temp_low=-40.0, float temp_high=125.0);
 
-        int start_meas(void);
+        int start_temp_conversion(void);
         int get_num_of_sample(void);
-        int read_samples(float *temp, int num_of_samples=1);
+        int get_temp(float *temp, int num_of_samples=1);
         
         // fifo functions
         int flush_fifo();

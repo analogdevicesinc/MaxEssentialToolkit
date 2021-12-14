@@ -33,6 +33,10 @@
 
 #include <MAX31889/MAX31889.h>
 
+
+#define GET_BIT_VAL(val, pos, mask)     ( ( (val) & mask) >> pos )
+#define SET_BIT_VAL(val, pos, mask)     ( ( ((int)val) << pos) & mask )
+
 //
 #define GPIO_MODE_MASK(idx)               (3<<(idx*6))
 #define GPIO_MODE_SET_MODE(idx, mode)     (mode<<(idx*6))
@@ -167,9 +171,9 @@ void MAX31889::begin(void)
 int MAX31889::reset_registers(void)
 {
     int ret = 0;
-    uint8_t byt = 1;
+    uint8_t val8 = 1;
 
-    ret = write_register(MAX31889_R_SYS_CTRL, &byt);
+    ret = write_register(MAX31889_R_SYS_CTRL, &val8);
 
     return ret;
 }
@@ -177,9 +181,10 @@ int MAX31889::reset_registers(void)
 int MAX31889::clear_flags(void)
 {
     int ret = 0;
-    status_t stat;
+    uint8_t val8;
 
-    ret = get_status(stat);
+    // reading status register will clear flags
+    ret = read_register(MAX31889_R_STATUS, &val8);
 
     return ret;
 }
@@ -187,23 +192,17 @@ int MAX31889::clear_flags(void)
 int MAX31889::get_status(status_t &stat)
 {
     int ret = 0;
-    uint8_t byt;
+    uint8_t val8;
 
-    // clear first
-    stat.fifo_almost_full = 0;
-    stat.temp_low         = 0;
-    stat.temp_high        = 0;
-    stat.temp_ready       = 0; 
-
-    ret = read_register(MAX31889_R_STATUS, &byt);
+    ret = read_register(MAX31889_R_STATUS, &val8);
     if (ret) {
-        return -1;
+        return ret;
     }
 
-    stat.fifo_almost_full = (byt & MAX31889_F_STATUS_A_FULL)   >> MAX31889_F_STATUS_A_FULL_POS;
-    stat.temp_low         = (byt & MAX31889_F_STATUS_TEMP_LO)  >> MAX31889_F_STATUS_TEMP_LO_POS;
-    stat.temp_high        = (byt & MAX31889_F_STATUS_TEMP_HI)  >> MAX31889_F_STATUS_TEMP_HI_POS;
-    stat.temp_ready       = (byt & MAX31889_F_STATUS_TEMP_RDY) >> MAX31889_F_STATUS_TEMP_RDY_POS; 
+    stat.bits.a_full    = GET_BIT_VAL(val8, MAX31889_F_STATUS_A_FULL_POS,   MAX31889_F_STATUS_A_FULL);
+    stat.bits.temp_low  = GET_BIT_VAL(val8, MAX31889_F_STATUS_TEMP_LO_POS,  MAX31889_F_STATUS_TEMP_LO);
+    stat.bits.temp_high = GET_BIT_VAL(val8, MAX31889_F_STATUS_TEMP_HI_POS,  MAX31889_F_STATUS_TEMP_HI);
+    stat.bits.temp_rdy  = GET_BIT_VAL(val8, MAX31889_F_STATUS_TEMP_RDY_POS, MAX31889_F_STATUS_TEMP_RDY); 
 
     return ret;
 }
@@ -220,7 +219,7 @@ int MAX31889::config_gpio(gpio_t gpio, gpio_mode_t mode)
 
     ret = read_register(MAX31889_R_GPIO_SETUP, &byt);
     if (ret) {
-        return -1;
+        return ret;
     }
 
     byt &= ~GPIO_MODE_MASK((int)gpio);
@@ -242,7 +241,7 @@ int MAX31889::set_gpio_state(gpio_t gpio, int state)
 
     ret = read_register(MAX31889_R_GPIO_CTRL, &byt);
     if (ret) {
-        return -1;
+        return ret;
     }
 
     if (state) {
@@ -288,7 +287,7 @@ int MAX31889::set_interrupt(int_mode_t interrupt, bool is_enable)
 
     ret = read_register(MAX31889_R_INT_EN, &byt);
     if (ret) {
-        return -1;
+        return ret;
     }
 
     if (is_enable) {
@@ -330,7 +329,7 @@ int MAX31889::get_alarm_temp(float &temp_low, float &temp_high)
     // Burst mode read, HIGH (MSB-LSB) and LOW (MSB-LSB) 
     ret = read_register(MAX31889_R_ALARM_HI_MSB, buf, 4);
     if (ret) {
-        return -1;
+        return ret;
     }
     //
     count = (buf[0]<<8) | buf[1];
@@ -356,7 +355,7 @@ int MAX31889::get_id(id_t &id)
     return ret;
 }
 
-int MAX31889::start_meas(void)
+int MAX31889::start_temp_conversion(void)
 {
     int ret = 0;
     uint8_t byt;
@@ -381,7 +380,7 @@ int MAX31889::get_num_of_sample(void)
 
     ret = read_register(MAX31889_R_FIFO_OVF_CNT, &ovf_count);
     if (ret) {
-        return -1;
+        return ret;
     }
 
     if (ovf_count == 0) {
@@ -393,7 +392,7 @@ int MAX31889::get_num_of_sample(void)
     return num_of_samples;
 }
 
-int MAX31889::read_samples(float *temp, int num_of_samples/*=1*/)
+int MAX31889::get_temp(float *temp, int num_of_samples/*=1*/)
 {
     int  ret = 0;
     uint8_t buf[2];
@@ -402,7 +401,7 @@ int MAX31889::read_samples(float *temp, int num_of_samples/*=1*/)
 
         ret = read_register(MAX31889_R_FIFO_DATA, buf, 2);
         if (ret) {
-            return -1;
+            return ret;
         }
         // 
         temp[i] = convert_count_2_temp( (buf[0]<<8) | buf[1] );
@@ -414,16 +413,16 @@ int MAX31889::read_samples(float *temp, int num_of_samples/*=1*/)
 int MAX31889::flush_fifo(void)
 {
     int ret = 0;
-    uint8_t byt;
+    uint8_t val8;
     uint16_t count;
 
-    ret = read_register(MAX31889_R_FIFO_CONF2, &byt);
+    ret = read_register(MAX31889_R_FIFO_CONF2, &val8);
     if (ret) {
-        return -1;
+        return ret;
     }
 
-    byt |= MAX31889_F_FIFO_CONF2_FLUSH_FIFO;
-    ret = write_register(MAX31889_R_FIFO_CONF2, &byt);
+    val8 |= MAX31889_F_FIFO_CONF2_FLUSH_FIFO;
+    ret = write_register(MAX31889_R_FIFO_CONF2, &val8);
 
     return ret;
 }
@@ -446,16 +445,17 @@ int MAX31889::set_almost_full_depth(unsigned int num_of_samples)
 int MAX31889::get_fifo_cfg(fifo_cfg_t &cfg)
 {
     int ret = 0;
-    uint8_t byt;
+    uint8_t val8;
 
-    ret = read_register(MAX31889_R_FIFO_CONF2, &byt);
+    ret = read_register(MAX31889_R_FIFO_CONF2, &val8);
     if (ret) {
-        return -1;
+        return ret;
     }
 
-    cfg.roolover = (byt & MAX31889_F_FIFO_CONF2_FIFO_RO) >> MAX31889_F_FIFO_CONF2_FIFO_RO_POS;
-    cfg.allmost_full_type = (byt & MAX31889_F_FIFO_CONF2_A_FULL_TYPE) >> MAX31889_F_FIFO_CONF2_A_FULL_TYPE_POS;
-    cfg.stat_clear = (byt & MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR) >> MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR_POS; 
+    cfg.bits.fifo_ro       = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_FIFO_RO_POS,       MAX31889_F_FIFO_CONF2_FIFO_RO);
+    cfg.bits.a_full_type   = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_A_FULL_TYPE_POS,   MAX31889_F_FIFO_CONF2_A_FULL_TYPE);
+    cfg.bits.fifo_stat_clr = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR_POS, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR); 
+    cfg.bits.flush_fifo    = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_FLUSH_FIFO_POS,    MAX31889_F_FIFO_CONF2_FLUSH_FIFO); 
 
     return ret;
 }
@@ -463,21 +463,14 @@ int MAX31889::get_fifo_cfg(fifo_cfg_t &cfg)
 int MAX31889::set_fifo_cfg(fifo_cfg_t cfg)
 {
     int ret = 0;
-    uint8_t byt = 0;
+    uint8_t val8 = 0;
 
-    if (cfg.roolover) {
-        byt |= MAX31889_F_FIFO_CONF2_FIFO_RO;
-    }
+    val8 |= SET_BIT_VAL(cfg.bits.fifo_ro ,      MAX31889_F_FIFO_CONF2_FIFO_RO_POS,       MAX31889_F_FIFO_CONF2_FIFO_RO);
+    val8 |= SET_BIT_VAL(cfg.bits.a_full_type,   MAX31889_F_FIFO_CONF2_A_FULL_TYPE_POS,   MAX31889_F_FIFO_CONF2_A_FULL_TYPE);
+    val8 |= SET_BIT_VAL(cfg.bits.fifo_stat_clr, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR_POS, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR);
+    val8 |= SET_BIT_VAL(cfg.bits.flush_fifo,    MAX31889_F_FIFO_CONF2_FLUSH_FIFO_POS,    MAX31889_F_FIFO_CONF2_FLUSH_FIFO);
 
-    if (cfg.allmost_full_type) {
-        byt |= MAX31889_F_FIFO_CONF2_A_FULL_TYPE;
-    }
-
-    if (cfg.stat_clear) {
-        byt |= MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR;
-    }
-
-    ret = write_register(MAX31889_R_FIFO_CONF2, &byt);
+    ret = write_register(MAX31889_R_FIFO_CONF2, &val8);
 
     return ret;
 }

@@ -59,7 +59,7 @@ void setup()  {
 void loop()  { 
     int ret;
 
-    ret = temp_sensor.start_meas();
+    ret = temp_sensor.start_temp_conversion();
     if (ret) {
         Serial.println("Start measurement failed!");
         return;
@@ -70,7 +70,7 @@ void loop()  {
     if ( LOW == digitalRead(pin_alarm) ) {
         float temp = 0;
 
-        ret = temp_sensor.read_samples(&temp, 1);
+        ret = temp_sensor.get_temp(&temp, 1);
         if (ret) {
             Serial.println("Temprature read failed!");
         } else {

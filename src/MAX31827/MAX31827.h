@@ -51,13 +51,6 @@
  */
 class MAX31827 {
     public:
-        typedef struct {
-            bool temp_ready; // true: ready, false: not ready
-            bool pec_err;    // true: PEC error occur, false: No error
-            bool temp_low;
-            bool temp_high; 
-        } status_t;
-
         typedef enum {
             PERIOD_0_SHUTDOWN  = 0,
             PERIOD_1_DIV_64SEC = 1,
@@ -91,18 +84,30 @@ class MAX31827 {
         } fault_t;
 
         typedef struct {
-            uint8_t        oneshot;
-            conv_period_t  conversion_rate;
-            uint8_t        pec;
-            uint8_t        timeout;
-            resolution_t   resolution;
-            uint8_t        alarm_polarity;
-            mode_t         comp_int;
-            fault_t        fault_queue;
-            uint8_t        pec_error;
-            uint8_t        under_temp_stat;
-            uint8_t        over_temp_stat;
+            bool temp_ready; // true: ready, false: not ready
+            bool pec_err;    // true: PEC error occur, false: No error
+            bool temp_low;   // under temperature status
+            bool temp_high;  // over temperature status
+        } status_t;
+
+        typedef union {
+            uint16_t raw;
+            struct {
+                uint8_t oneshot         : 1; // 
+                uint8_t conversion_rate : 3; // conv_period_t
+                uint8_t pec_enable      : 1; // 
+                uint8_t timeout         : 1; // 
+                uint8_t resolution      : 2; // resolution_t
+                uint8_t alarm_polarity  : 1; // 
+                uint8_t comp_int        : 1; // mode_t
+                uint8_t fault_queue     : 2; // fault_t
+                uint8_t                 : 1; // not used
+                uint8_t pec_error       : 1; // 
+                uint8_t under_temp_stat : 1; // 
+                uint8_t over_temp_stat  : 1; // 
+            } bits;
         } reg_cfg_t;
+
 
         // constructer
         MAX31827(TwoWire *i2c, uint8_t i2c_addr);
@@ -110,7 +115,9 @@ class MAX31827 {
         void begin(void);
         //
         int get_status(status_t &stat);
+        //
         int get_configuration(reg_cfg_t &cfg);
+        int set_configuration(reg_cfg_t cfg);
         
         //
         int set_alarm(float temp_low, float temp_high);
@@ -119,7 +126,7 @@ class MAX31827 {
         int get_alarm_hyst(float &tl_hyst, float &th_hyst);
         int set_temp(float temp, uint8_t register);
 
-        int start_meas(conv_period_t period);
+        int start_temp_conversion(conv_period_t period);
         int get_temp(float &temp, uint8_t register=MAX31827_R_TEMPERATURE);
         //
         int set_timeout_status(bool enable);

@@ -47,8 +47,8 @@ void setup() {
         Serial.println("Read fifo configuration failed!");
     }
 
-    g_fifo_cfg.store_iv = MAX40080::MEAS_CURRENT_AND_VOLTAGE;
-    g_fifo_cfg.overflow_warning = 8;
+    g_fifo_cfg.bits.store_iv = MAX40080::MEAS_CURRENT_AND_VOLTAGE;
+    g_fifo_cfg.bits.overflow_warning = 8;
     ret = sensor.set_fifo_configuration(g_fifo_cfg);
     if (ret) {
         Serial.println("Set fifo configuration failed!");
@@ -62,8 +62,8 @@ void setup() {
         Serial.println("Read configuration failed!");
     }
 
-    g_cfg.mode = MAX40080::OP_MODE_4SPS;
-    g_cfg.digital_filter = MAX40080::AVERAGE_1_SAMPLE;
+    g_cfg.bits.mode = MAX40080::OP_MODE_4SPS;
+    g_cfg.bits.digital_filter = MAX40080::AVERAGE_1_SAMPLE;
     
     ret = sensor.set_configuration(g_cfg);
     if (ret) {
@@ -90,15 +90,17 @@ void loop()  {
         float voltage;
         float current;
         
+        Serial.println("-------------------------------");
+        
         ret = sensor.get_status(g_stat);
         if (ret) {
             Serial.println("Status read failed!");
             return;
         }
 
-        fifo_data_count = g_stat.fifo_data_count;
+        fifo_data_count = g_stat.bits.fifo_data_count;
     
-        if ( (fifo_data_count == 0) && (g_stat.fifo_overflow == 1) ) {
+        if ( (fifo_data_count == 0) && (g_stat.bits.fifo_overflow == 1) ) {
             fifo_data_count = 64;
         }
 
