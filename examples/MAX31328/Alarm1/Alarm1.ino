@@ -54,9 +54,13 @@ void setup() {
         Serial.println("Set alarm failed!");
     }
     
-    // resest flags
-    rtc.clear_alarm_flag(MAX31328::ALARM1);
-    rtc.clear_alarm_flag(MAX31328::ALARM2);
+    ret = rtc.irq_enable(MAX31328::INTR_ID_ALARM1);
+    if (ret) {
+        Serial.println("IRQ enable failed!");
+    }
+
+    // clear all irq flags on startup
+    rtc.irq_clear_flag();
     
     print_time(); // print current time
 }
@@ -69,6 +73,6 @@ void loop()  {
     
     if (pin_state == LOW) {
         print_time();
-        rtc.clear_alarm_flag(MAX31328::ALARM1); 
+        rtc.irq_clear_flag(MAX31328::INTR_ID_ALARM1);
     }
 }

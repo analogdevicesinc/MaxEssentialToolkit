@@ -39,7 +39,7 @@ void loop()  {
         Serial.println("Timeout occur!");
     } else {
         float temp = 0;
-        ret = rtc.get_temperature(temp);
+        ret = rtc.get_temp(temp);
         if (ret) {
             Serial.println("Temperature read failed!");
         } else {

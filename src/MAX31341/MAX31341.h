@@ -112,27 +112,25 @@ public:
 	* @brief	Square wave output frequency selection on CLKOUT pin
 	*/
 	typedef enum {
-	    SQW_OUT_FREQ_1HZ,		/**< 1Hz */
-	    SQW_OUT_FREQ_4096HZ,	/**< 4.098kHz */
-	    SQW_OUT_FREQ_8192HZ,	/**< 8.192kHz */
-	    SQW_OUT_FREQ_32768HZ,	/**< 32.768kHz */
+	    SQW_OUT_FREQ_1HZ,	/**< 1Hz */
+	    SQW_OUT_FREQ_4KHZ,	/**< 4.098kHz */
+	    SQW_OUT_FREQ_8KHZ,	/**< 8.192kHz */
+	    SQW_OUT_FREQ_3KHZ,	/**< 32.768kHz */
 	} sqw_out_freq_t;
 
 	/**
 	* @brief	Selection of interrupt ids
 	*/
 	typedef enum {
-	    INTR_ID_ALARM1,		/**< Alarm1 flag */
-	    INTR_ID_ALARM2,		/**< Alarm2 flag */
-	    INTR_ID_TIMER,		/**< Timer interrupt flag */
-	    INTR_ID_RESERVED,
-	    INTR_ID_EXTERNAL,	/**< External interrupt flag for DIN1 */
-	    INTR_ID_ANALOG,		/**< Analog Interrupt flag / Power fail flag  */
-	    INTR_ID_OSF,		/**< Oscillator stop flag */
-	    INTR_ID_LOS,		/**< Loss of signal */
-	    INTR_ID_END,
+	    INTR_ID_ALARM1   = 1<<0,	/**< Alarm1 flag */
+	    INTR_ID_ALARM2   = 1<<1,	/**< Alarm2 flag */
+	    INTR_ID_TIMER    = 1<<2,	/**< Timer interrupt flag */
+	    INTR_ID_RESERVED = 1<<3,
+	    INTR_ID_EXTERNAL = 1<<4,	/**< External interrupt flag for DIN1 */
+	    INTR_ID_ANALOG   = 1<<5,	/**< Analog Interrupt flag / Power fail flag  */
+	    INTR_ID_OSF      = 1<<6,	/**< Oscillator stop flag */
+	    INTR_ID_ALL 	 = 0xFF
 	} intr_id_t;
-
 
 	/**
 	* @brief	Alarm number selection
@@ -151,7 +149,7 @@ public:
 	    ALARM_PERIOD_HOURLY,		/**< Second and Minute match */
 	    ALARM_PERIOD_DAILY,			/**< Hour, Minute and Second match*/
 	    ALARM_PERIOD_WEEKLY,		/**< Day and Time match */
-	    ALARM_PERIOD_MONTHLY,		/**< Date and Time match */
+	    ALARM_PERIOD_MONTHLY 		/**< Date and Time match */
 	} alarm_period_t;
 
 	/**
@@ -159,7 +157,7 @@ public:
 	*/
 	typedef enum {
 	    CONFIGURE_PIN_AS_INTA,	/**< Configure pin as interrupt out */
-	    CONFIGURE_PIN_AS_CLKIN,	/**< Configure pin as external clock in  */
+	    CONFIGURE_PIN_AS_CLKIN	/**< Configure pin as external clock in  */
 	} config_inta_clkin_pin_t;
 
 	/**
@@ -167,7 +165,7 @@ public:
 	*/
 	typedef enum {
 	    CONFIGURE_PIN_AS_CLKOUT,	/**< Output is square wave */
-	    CONFIGURE_PIN_AS_INTB,		/**< Output is interrupt */
+	    CONFIGURE_PIN_AS_INTB		/**< Output is interrupt */
 	} config_intb_clkout_pin_t;
 
 	/**
@@ -176,7 +174,7 @@ public:
 	typedef enum {
 	    SYNC_DLY_LESS_THAN_1SEC = 0,	/**<  Sync delay less than 1 second, recommended for external 1Hz clock */
 	    SYNC_DLY_LESS_THAN_100MS,		/**<  Sync delay less than 100 msec, recommended for external 50Hz/60Hz/32KHz clock */
-	    SYNC_DLY_LESS_THAN_10MS,		/**<  Sync delay less than 10 msec, recommended for internal clock */
+	    SYNC_DLY_LESS_THAN_10MS			/**<  Sync delay less than 10 msec, recommended for internal clock */
 	} sync_delay_t;
 
 	typedef union {
@@ -445,37 +443,30 @@ public:
 	*/
 	int set_data_retention_mode(bool enable);
 
-	/**
-	* @brief		Enable interrupt
-	*
-	* @param[in]	id Interrupt id, one of INTR_ID_*
-	*
-	* @return		0 on success, error code on failure
-	*/
-	int irq_enable(intr_id_t id);
+    /**
+    * @brief        Enable interrupt
+    *
+    * @param[in]    id Interrupt id, one of INTR_ID_*
+    *
+    * @return       0 on success, error code on failure
+    */
+    int irq_enable(intr_id_t id=INTR_ID_ALL);
 
-	/**
-	* @brief		Disable interrupt
-	*
-	* @param[in]	id Interrupt id, one of INTR_ID_*
-	*
-	* @return		0 on success, error code on failure
-	*/
-	int irq_disable(intr_id_t id);
-
-	/**
-	* @brief	Disable all interrupts
-	*
-	* @return	0 on success, error code on failure
-	*/
-	int irq_disable_all();
-
+    /**
+    * @brief        Disable interrupt
+    *
+    * @param[in]    id Interrupt id, one of INTR_ID_*
+    *
+    * @return       0 on success, error code on failure
+    */
+    int irq_disable(intr_id_t id=INTR_ID_ALL);
+    
     /**
     * @brief    Clear the interrupt flag
     *
     * @return   0 on success, error code on failure
     */
-    int clear_irq_flags();
+    int irq_clear_flag(intr_id_t id=INTR_ID_ALL);
     
 	/**
 	* @brief	Put device into reset state

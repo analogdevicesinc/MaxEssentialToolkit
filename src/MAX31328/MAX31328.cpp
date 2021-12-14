@@ -334,19 +334,6 @@ int MAX31328::set_alarm(alarm_no_t alarm_no, const struct tm *alarm_time, alarm_
         return ret;
     }
 
-    /*
-     *  Enable IRQ for related alarm
-     */
-    uint8_t val8;
-
-    ret = read_register(MAX31328_R_CONTROL, &val8);
-    if (ret) {
-        return ret;
-    }
-    val8 |= (uint8_t)alarm_no | MAX31328_F_CTRL_INTCN; // enable interrupt
-
-    ret = write_register(MAX31328_R_CONTROL, &val8);
-
     return ret;
 }
 
@@ -465,7 +452,52 @@ int MAX31328::get_time(struct tm *time)
     return ret;
 }
 
-int MAX31328::clear_alarm_flag(alarm_no_t alarm_no)
+int MAX31328::irq_enable(intr_id_t id/*=INTR_ID_ALL*/)
+{
+    int ret;
+    uint8_t val8;
+
+    ret = read_register(MAX31328_R_CONTROL, &val8);
+    if (ret) {
+        return ret;
+    }
+    
+    val8 |= MAX31328_F_CTRL_INTCN;
+    if (id == INTR_ID_ALL) {
+        val8 |= MAX31328_F_CTRL_A2IE | MAX31328_F_CTRL_A1IE;
+    } else {
+        val8 |= id;
+    }
+
+    ret = write_register(MAX31328_R_CONTROL, &val8);
+
+    return ret;
+}
+
+int MAX31328::irq_disable(intr_id_t id/*=INTR_ID_ALL*/)
+{
+    int ret;
+    uint8_t val8;
+
+    ret = read_register(MAX31328_R_CONTROL, &val8);
+    if (ret) {
+        return ret;
+    }
+
+    if (id == INTR_ID_ALL) {
+        val8 &= ~MAX31328_F_CTRL_INTCN;
+        val8 &= ~(MAX31328_F_CTRL_A2IE | MAX31328_F_CTRL_A1IE);
+    } else {
+        val8 &= ~id; 
+    }
+
+    val8 &= ~id;
+    ret = write_register(MAX31328_R_CONTROL, &val8);
+
+    return ret;
+}
+
+int MAX31328::irq_clear_flag(intr_id_t id/*=INTR_ID_ALL*/)
 {
     int ret;
     uint8_t val8;
@@ -475,9 +507,11 @@ int MAX31328::clear_alarm_flag(alarm_no_t alarm_no)
         return ret;
     }
 
-    // Clear a1f or a2f flag
-    val8 &= ~((uint8_t)alarm_no);
-
+    if (id == INTR_ID_ALL) {
+        val8 &= ~(MAX31328_F_STATUS_A2F | MAX31328_F_STATUS_A1F);
+    } else {
+        val8 &= ~id; 
+    }
     ret = write_register(MAX31328_R_STATUS, &val8);
 
     return ret;
@@ -551,7 +585,7 @@ int MAX31328::is_temp_ready(void)
     return ret;
 }
 
-int MAX31328::get_temperature(float &temp)
+int MAX31328::get_temp(float &temp)
 {
     int ret;
     uint8_t  buf[2];

@@ -124,12 +124,13 @@ class MAX31343
 	    * @brief	Selection of interrupt ids
 	    */
 	    typedef enum {
-	        INTR_ID_ALARM1 = 0,		// Alarm1 flag
-	        INTR_ID_ALARM2 = 1,		// Alarm2 flag
-	        INTR_ID_TIMER  = 2,		// Timer interrupt flag
-	        INTR_ID_TEMP   = 3,		// Temp sense ready flag
-	        INTR_ID_PFAIL  = 5,		// Power fail interrupt enable
-	        INTR_ID_DOSF   = 6,		// Disable Oscillator flag
+	        INTR_ID_ALARM1 = 1<<0,	// Alarm1 flag
+	        INTR_ID_ALARM2 = 1<<1,	// Alarm2 flag
+	        INTR_ID_TIMER  = 1<<2,	// Timer interrupt flag
+	        INTR_ID_TEMP   = 1<<3,	// Temp sense ready flag
+	        INTR_ID_PFAIL  = 1<<4,	// Power fail interrupt enable
+	        INTR_ID_DOSF   = 1<<5,	// Disable Oscillator flag
+	        INTR_ID_ALL	   = 0xFF
 	    } intr_id_t;
 
 	    /**
@@ -425,39 +426,32 @@ class MAX31343
 		*
 		* @return		0 on success, error code on failure
 		*/
-		int get_temperature(float &temp);
+		int get_temp(float &temp);
 
-		/**
-		* @brief		Enable interrupt
-		*
-		* @param[in]	id Interrupt id, one of INTR_ID_*
-		*
-		* @return		0 on success, error code on failure
-		*/
-		int irq_enable(intr_id_t id);
+        /**
+        * @brief        Enable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_enable(intr_id_t id=INTR_ID_ALL);
 
-		/**
-		* @brief		Disable interrupt
-		*
-		* @param[in]	id Interrupt id, one of INTR_ID_*
-		*
-		* @return		0 on success, error code on failure
-		*/
-		int irq_disable(intr_id_t id);
-
-		/**
-		* @brief	Disable all interrupts
-		*
-		* @return	0 on success, error code on failure
-		*/
-		int irq_disable_all();
-	    
-	    /**
-	    * @brief    Clear the interrupt flag
-	    *
-	    * @return   0 on success, error code on failure
-	    */
-	    int clear_irq_flags();
+        /**
+        * @brief        Disable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_disable(intr_id_t id=INTR_ID_ALL);
+        
+        /**
+        * @brief    Clear the interrupt flag
+        *
+        * @return   0 on success, error code on failure
+        */
+        int irq_clear_flag(intr_id_t id=INTR_ID_ALL);
 
 		/**
 		* @brief	Put device into reset state

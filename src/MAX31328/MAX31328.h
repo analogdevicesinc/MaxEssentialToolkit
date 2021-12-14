@@ -51,8 +51,14 @@ class MAX31328
 {
     public:
         typedef enum {
+            INTR_ID_ALARM1 = 1<<0,  /**< Alarm1 flag */
+            INTR_ID_ALARM2 = 1<<1,  /**< Alarm2 flag */
+            INTR_ID_ALL    = 0xFF
+        } intr_id_t;
+
+        typedef enum {
             ALARM1 = 1<<0, // Alarm number 1
-            ALARM2 = 1<<1  // Alarm number 2
+            ALARM2 = 1<<1, // Alarm number 2
         } alarm_no_t;
 
         /**
@@ -189,13 +195,29 @@ class MAX31328
         int get_alarm(alarm_no_t alarm_no, struct tm *alarm_time, alarm_period_t *period, bool *is_enabled);
 
         /**
-        * @brief        Clear alarm flag
+        * @brief        Enable interrupt
         *
-        * @param[in]    alarm_no alarm number, ALARM1 or ALARM2
+        * @param[in]    id Interrupt id, one of INTR_ID_*
         *
         * @return       0 on success, error code on failure
         */
-        int clear_alarm_flag(alarm_no_t alarm_no);
+        int irq_enable(intr_id_t id=INTR_ID_ALL);
+
+        /**
+        * @brief        Disable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_disable(intr_id_t id=INTR_ID_ALL);
+        
+        /**
+        * @brief    Clear the interrupt flag
+        *
+        * @return   0 on success, error code on failure
+        */
+        int irq_clear_flag(intr_id_t id=INTR_ID_ALL);
         
         /**
         * @brief        Set square wave output frequency selection
@@ -227,7 +249,7 @@ class MAX31328
         *
         * @return       0 on success, error code on failure
         */
-        int get_temperature(float &temp);
+        int get_temp(float &temp);
 
         /**
         * @brief        Directly read value from register

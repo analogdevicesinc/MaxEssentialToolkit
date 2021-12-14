@@ -69,7 +69,7 @@ void setup() {
         Serial.println("IRQ enalbe failed!");
     }
     
-    rtc.clear_irq_flags();
+    rtc.irq_clear_flag();
 }
 
 void loop()  {

@@ -42,6 +42,13 @@
 #define BIN2BCD(val) ((((val) / 10) << 4) + (val) % 10)
 
 
+#define ALL_IRQ  (	MAX31343_F_INT_EN_A1IE 	 | \
+					MAX31343_F_INT_EN_A2IE 	 | \
+					MAX31343_F_INT_EN_TIE 	 | \
+					MAX31343_F_INT_EN_TSIE 	 | \
+					MAX31343_F_INT_EN_PFAILE | \
+					MAX31343_F_INT_EN_DOSF	 )
+
 
 int MAX31343::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
 {
@@ -129,7 +136,7 @@ void MAX31343::begin(void)
 
 	sw_reset_release();
 	rtc_start();
-	irq_disable_all();
+	irq_disable();
 }
 
 int MAX31343::get_status(status_t &stat)
@@ -834,7 +841,7 @@ int MAX31343::is_temp_ready(void)
     return ret;
 }
 
-int MAX31343::get_temperature(float &temp)
+int MAX31343::get_temp(float &temp)
 {
     int ret;
     uint8_t  buf[2];
@@ -864,55 +871,55 @@ int MAX31343::get_temperature(float &temp)
     return ret;    
 }
 
-int MAX31343::irq_enable(intr_id_t id)
+int MAX31343::irq_enable(intr_id_t id/*=INTR_ID_ALL*/)
 {
 	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31343_R_INT_EN, &reg, 1);
+	ret = read_register(MAX31343_R_INT_EN, &val8, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg |= (1 << id);
-	ret = write_register(MAX31343_R_INT_EN, &reg, 1);
+    if (id == INTR_ID_ALL) {
+        val8 |= ALL_IRQ;
+    } else {
+        val8 |= id;
+    }
+    
+	ret = write_register(MAX31343_R_INT_EN, &val8, 1);
 
 	return ret;
 }
 
-int MAX31343::irq_disable(intr_id_t id)
+int MAX31343::irq_disable(intr_id_t id/*=INTR_ID_ALL*/)
 {
 	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
-	ret = read_register(MAX31343_R_INT_EN, &reg, 1);
+	ret = read_register(MAX31343_R_INT_EN, &val8, 1);
 	if (ret) {
 		return ret;
 	}
 
-	reg &= ~(1 << id);
-	ret = write_register(MAX31343_R_INT_EN, &reg, 1);
+    if (id == INTR_ID_ALL) {
+        val8 &= ~ALL_IRQ;
+    } else {
+		val8 &= ~id;
+    }
+
+	ret = write_register(MAX31343_R_INT_EN, &val8, 1);
 
 	return ret;
 }
 
-int MAX31343::irq_disable_all()
+int MAX31343::irq_clear_flag(intr_id_t id/*=INTR_ID_ALL*/)
 {
 	int ret;
-	uint8_t reg = 0;
-
-	ret = write_register(MAX31343_R_INT_EN, &reg, 1);
-
-	return ret;
-}
-
-int MAX31343::clear_irq_flags()
-{
-	int ret;
-	uint8_t reg;
+	uint8_t val8;
 
 	// read status register to clear flags
-	ret = read_register(MAX31343_R_STATUS, &reg, 1);
+	ret = read_register(MAX31343_R_STATUS, &val8, 1);
 
 	return ret;
 }

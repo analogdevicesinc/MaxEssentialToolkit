@@ -41,6 +41,13 @@
 #define BIN2BCD(val) ((((val) / 10) << 4) + (val) % 10)
 
 
+#define ALL_IRQ  (	MAX31341_F_INT_EN_A1IE 	 | \
+					MAX31341_F_INT_EN_A2IE 	 | \
+					MAX31341_F_INT_EN_TIE 	 | \
+					MAX31341_F_INT_EN_EIE1 	 | \
+					MAX31341_F_INT_EN_ANA_IE | \
+					MAX31341_F_INT_EN_DOSF	 )
+
 int MAX31341::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
 {
     int ret;
@@ -128,7 +135,7 @@ void MAX31341::begin(void)
     
     sw_reset_release();
     rtc_start();
-    irq_disable_all();
+    irq_disable();
 }
 
 int MAX31341::get_version(uint8_t &version)
@@ -830,7 +837,7 @@ int MAX31341::set_data_retention_mode(bool enable)
 	return ret;
 }
 
-int MAX31341::irq_enable(intr_id_t id)
+int MAX31341::irq_enable(intr_id_t id/*=INTR_ID_ALL*/)
 {
 	int ret;
 	uint8_t val8;
@@ -840,14 +847,18 @@ int MAX31341::irq_enable(intr_id_t id)
 		return ret;
 	}
 
-	val8 |= (1 << id);
+    if (id == INTR_ID_ALL) {
+        val8 |= ALL_IRQ;
+    } else {
+        val8 |= id;
+    }
 
 	ret = write_register(MAX31341_R_INT_EN, &val8);
 
 	return ret;
 }
 
-int MAX31341::irq_disable(intr_id_t id)
+int MAX31341::irq_disable(intr_id_t id/*=INTR_ID_ALL*/)
 {
 	int ret;
 	uint8_t val8;
@@ -857,31 +868,26 @@ int MAX31341::irq_disable(intr_id_t id)
 		return ret;
 	}
 
-	val8 &= ~(1 << id);
-	ret = write_register(MAX31341_R_INT_EN, &val8);
-
-	return ret;
-}
-
-int MAX31341::irq_disable_all()
-{
-	int ret;
-	uint8_t val8 = 0;
+    if (id == INTR_ID_ALL) {
+        val8 &= ~ALL_IRQ;
+    } else {
+		val8 &= ~id;
+    }
 
 	ret = write_register(MAX31341_R_INT_EN, &val8);
 
 	return ret;
 }
 
-int MAX31341::clear_irq_flags()
+int MAX31341::irq_clear_flag(intr_id_t id/*=INTR_ID_ALL*/)
 {
-	int ret;
+    int ret;
 	uint8_t val8;
 
 	// read status register to clear flags
 	ret = read_register(MAX31341_R_INT_STATUS, &val8);
 
-	return ret;
+    return ret;
 }
 
 int MAX31341::sw_reset_assert()
