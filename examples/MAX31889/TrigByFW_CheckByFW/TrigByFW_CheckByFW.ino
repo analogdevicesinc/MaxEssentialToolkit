@@ -1,7 +1,7 @@
 #include <MaxEssentialToolkit.h>
 
 MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
-MAX31889::status_t g_status;
+MAX31889::reg_status_t g_status;
 
 void print_sensor_info()  {
     int ret;

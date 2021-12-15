@@ -83,7 +83,7 @@ class MAX31889
                 uint8_t           : 4; // not used
                 uint8_t a_full    : 1; // almost full
             } bits;
-        } status_t;
+        } reg_status_t;
 
         typedef union {
             uint8_t raw;
@@ -110,7 +110,7 @@ class MAX31889
         int get_id(id_t &id);
         //
         int clear_flags(void);
-        int get_status(status_t &stat);
+        int get_status(reg_status_t &stat);
         int set_interrupt(int_mode_t interrupt, bool is_enable);
         // gpio functions
         int config_gpio(gpio_t gpio, gpio_mode_t mode);

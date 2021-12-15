@@ -93,7 +93,7 @@ class MAX31328
                 uint8_t         : 3; // not used
                 uint8_t osf     : 1; 
             } bits;
-        } status_t;
+        } reg_status_t;
 
         typedef union {
             uint8_t raw;
@@ -124,7 +124,7 @@ class MAX31328
         *
         * @returns      0 on success, negative error code on failure.
         */
-        int get_status(status_t &stat);
+        int get_status(reg_status_t &stat);
 
         /**
         * @brief        Set status byte
@@ -133,7 +133,7 @@ class MAX31328
         *
         * @returns      0 on success, negative error code on failure.
         */
-        int set_status(status_t stat);
+        int set_status(reg_status_t stat);
 
         /**
         * @brief        Get control byte

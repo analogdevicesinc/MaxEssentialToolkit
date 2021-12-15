@@ -54,7 +54,7 @@
 #define MAX31328_R_ALRM2_DAY_DATE      ( 0x0D )
 #define MAX31328_R_CONTROL             ( 0x0E )
 #define MAX31328_R_STATUS              ( 0x0F )
-#define MAX31328_R_AGING_OFFSET        ( 0x10 )   //don't touch this register
+#define MAX31328_R_AGING_OFFSET        ( 0x10 )
 #define MAX31328_R_MSB_TEMP            ( 0x11 )
 #define MAX31328_R_LSB_TEMP            ( 0x12 )
 

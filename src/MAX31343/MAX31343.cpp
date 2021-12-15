@@ -139,7 +139,7 @@ void MAX31343::begin(void)
 	irq_disable();
 }
 
-int MAX31343::get_status(status_t &stat)
+int MAX31343::get_status(reg_status_t &stat)
 {
     int ret;
     uint8_t val8;

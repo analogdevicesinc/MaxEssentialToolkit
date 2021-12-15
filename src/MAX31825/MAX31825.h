@@ -86,7 +86,7 @@ class MAX31825 {
                 uint8_t tl_fault : 1; // 
                 uint8_t th_fault : 1; //
             } bits;
-        } status_t;
+        } reg_status_t;
 
         typedef union {
             uint8_t raw;
@@ -107,7 +107,7 @@ class MAX31825 {
         int  set_addressing_mode(addressing_mode_t addr_mode, byte location=0x00, byte rom_code[8]={0,} );
         int  read_rom(byte (&rom_code)[8]);
         //
-        int get_status(status_t &stat);
+        int get_status(reg_status_t &stat);
         int get_configuration(reg_cfg_t &cfg);
         int set_configuration(reg_cfg_t cfg);
 

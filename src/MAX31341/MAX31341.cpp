@@ -149,7 +149,7 @@ int MAX31341::get_version(uint8_t &version)
     return ret;
 }
 
-int MAX31341::get_status(status_t &stat)
+int MAX31341::get_status(reg_status_t &stat)
 {
     int ret;
     uint8_t val8;

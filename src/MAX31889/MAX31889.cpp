@@ -189,7 +189,7 @@ int MAX31889::clear_flags(void)
     return ret;
 }
 
-int MAX31889::get_status(status_t &stat)
+int MAX31889::get_status(reg_status_t &stat)
 {
     int ret = 0;
     uint8_t val8;

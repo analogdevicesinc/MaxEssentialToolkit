@@ -2,7 +2,7 @@
 
 
 MAX31889 temp_sensor(&Wire, MAX31889_DEFAULT_I2C_ADDR);
-MAX31889::status_t g_status;
+MAX31889::reg_status_t g_status;
 // Pin 46 is P5.6 (for MAX32630FTHR Board)
 // More detail here: https://os.mbed.com/platforms/MAX32630FTHR/
 int pin_trigger = 46; // Connects to GPIO1 pin of MAX31889

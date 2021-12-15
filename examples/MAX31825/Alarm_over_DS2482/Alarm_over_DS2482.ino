@@ -107,7 +107,7 @@ void loop()  {
     
     if (pin_state == LOW) {
 
-        MAX31825::status_t  status;
+        MAX31825::reg_status_t  status;
         float temp = 0;
 
         ret = temp_sensor.get_status(status);

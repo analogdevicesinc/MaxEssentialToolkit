@@ -189,7 +189,7 @@ public:
 			uint8_t osf     : 1;
 			uint8_t los     : 1;
 		} bits;
-	} status_t;
+	} reg_status_t;
 
 	typedef union {
 		uint16_t raw;
@@ -240,7 +240,7 @@ public:
     *
     * @returns      0 on success, negative error code on failure.
     */
-    int get_status(status_t &stat);
+    int get_status(reg_status_t &stat);
 
     /**
     * @brief        Get configuration bytes

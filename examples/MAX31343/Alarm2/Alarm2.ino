@@ -1,7 +1,7 @@
 #include <MaxEssentialToolkit.h>
 
 MAX31343 rtc(&Wire, MAX31343_I2C_ADDRESS);
-MAX31343::status_t g_stat;
+MAX31343::reg_status_t g_stat;
 
 // Pin Number that connects to MAX31343 interrupt pin
 // Please update pin_interrupt depend on your target board connection

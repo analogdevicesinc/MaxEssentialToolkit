@@ -128,7 +128,7 @@ void MAX31328::begin(void)
     m_i2c->begin();
 }
 
-int MAX31328::get_status(status_t &stat)
+int MAX31328::get_status(reg_status_t &stat)
 {
     int ret;
     uint8_t val8;
@@ -147,7 +147,7 @@ int MAX31328::get_status(status_t &stat)
     return ret;
 }
 
-int MAX31328::set_status(status_t stat)
+int MAX31328::set_status(reg_status_t stat)
 {
     int ret;
     uint8_t val8 = 0;

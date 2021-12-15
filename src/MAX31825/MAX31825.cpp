@@ -397,7 +397,7 @@ int MAX31825::start_temp_conversion(void)
     return ret;
 }
 
-int MAX31825::get_status(status_t &stat)
+int MAX31825::get_status(reg_status_t &stat)
 {
     int ret = 0;
     byte val8;

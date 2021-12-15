@@ -2,7 +2,7 @@
 
 
 MAX31341 rtc(&Wire, MAX31341_I2C_ADDRESS);
-MAX31341::status_t g_stat;
+MAX31341::reg_status_t g_stat;
 
 int pin_inta = 3;// interrupt pins that connects to MAX31341
 struct tm rtc_ctime;
