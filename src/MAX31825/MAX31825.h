@@ -36,18 +36,13 @@
 
 
 #include <MAX31825/MAX31825_registers.h>
-#include <MAX31825/DS2482/DS2482.h>
+#include <MAX31825/DS2482/DS2482.h> // Requires to drive over DS2482
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <OneWire.h>
+#include <OneWire.h>  // Requires Onewire library 
 
 
-/*
- *
- * MAX31825 Temperature Sensor
- * 
- */
 class MAX31825 {
     public:
         typedef enum {
@@ -99,27 +94,163 @@ class MAX31825 {
             } bits;
         } reg_cfg_t;
 
-
+        /**
+        * @brief        Constructer to driver sensor over onewire interface
+        *
+        * @param[in]    onewire: Onewire instance
+        */
         MAX31825(OneWire *onewire);
+
+        /**
+        * @brief        Constructer to driver sensor over onewire interface
+        *
+        * @param[in]    i2c: I2C instance
+        * @param[in]    i2c_addr: slave address
+        */
         MAX31825(TwoWire *i2c, byte i2c_addr);
-        //
+   
+        /**
+        * @brief        Must be call one time before using class methods
+        *
+        */
         void begin(void);
+
+        /**
+        * @brief       To select addressing onewire target,
+        *              Onewire target can be address by ROMCode or location byte, 
+        *              or none of them (Skip ROM feature).
+        *
+        * @param[in]   addressing_mode_t
+        * @param[in]   location: Onewire location addres, used for ADDRESSING_USE_ADD1_ADD0 mode
+        * @param[in]   rom_code: Onewire romcode, used for ADDRESSING_USE_ROM mode
+        *
+        * @return       0 on success, error code on failure
+        */
         int  set_addressing_mode(addressing_mode_t addr_mode, byte location=0x00, byte rom_code[8]={0,} );
+
+        /**
+        * @brief        Read MAX31825 ROMCode on line. 
+        *               It will send rom read command on line and try to find MAX31825 target
+        *
+        * @param[out]   rom_code: ROMCode of device that found.
+        *
+        * @return       0 on success, error code on failure
+        */
         int  read_rom(byte (&rom_code)[8]);
-        //
+
+        /**
+        * @brief        Read status register of target 
+        *
+        * @param[out]   stat: Decoded status register
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_status(reg_status_t &stat);
+
+        /**
+        * @brief        Read configuration register of target. 
+        *
+        * @param[out]   cfg: Decoded configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_configuration(reg_cfg_t &cfg);
+
+        /**
+        * @brief        Set configuration register of target.
+        *
+        * @param[in]    cfg: Decoded configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
         int set_configuration(reg_cfg_t cfg);
 
-        //
+        /**
+        * @brief        Start temperature conversion. 
+        *               Send ConvertT command to target
+        *
+        * @return       0 on success, error code on failure
+        */
         int start_temp_conversion();
+
+        /**
+        * @brief        Read temperature value. 
+        *
+        * @param[out]   tmp: Temperature value that measured
+        * 
+        * @return       0 on success, error code on failure
+        */
         int get_temp(float &tmp);
+
+        /**
+        * @brief        Set alarm low and alarm high. 
+        *
+        * @param[in]    temp_low: Low alarm temperature
+        * @param[in]    temp_hig: High alarm temperature
+        * 
+        * @return       0 on success, error code on failure
+        */ 
         int set_alarm(float temp_low, float temp_high);
+
+        /**
+        * @brief        Get existing alarm low and alarm high values. 
+        *
+        * @param[out]   temp_low: Existing low alarm temperature
+        * @param[out]   temp_high: Existing high alarm temperature
+        * 
+        * @return       0 on success, error code on failure
+        */ 
         int get_alarm(float &temp_low, float &temp_high);
-        //
+
+        /**
+        * @brief        Set conversion rate 
+        *
+        * @param[in]    conv_period_t
+        * 
+        * @return       0 on success, error code on failure
+        */
         int set_conv_rate(conv_period_t period);
+
+        /**
+        * @brief        Enable/disable extend mode
+        *               Normal format produces temperature data up to 128°C and
+        *               Extended format produces data up to and beyond the 145°C operating limit.
+        *
+        * @param[in]    True to enable extend mode, false to disable extend mode
+        * 
+        * @return       0 on success, error code on failure
+        */   
         int set_extend_mode(bool enable);
+
+        /**
+        * @brief        Set temperature resolution
+        *
+        * @param[in]    resolution_t
+        * 
+        * @return       0 on success, error code on failure
+        */  
         int set_resolution(resolution_t res);
+
+        /**
+        * @brief        Define comperator interrrupt working mechanism
+        *                  In Comparator mode, the ALARM output asserts and the
+        *                  Status bit is set to 1 when the temperature rises above the TH value 
+        *                  or falls below the TL value. The ALARM output de-asserts and 
+        *                  the Status bits return to 0 when the measured temperature returns to 
+        *                  a value ranging from TH to TL.
+        *
+        *                  In interrupt mode, exceeding TH or going
+        *                  below TL also asserts the ALARM output and sets the Status bits to 1. 
+        *                  ALARM remains asserted and the Status bits remain set to 1 until 
+        *                  a read operation is performed on any of the registers, 
+        *                  at which point ALARM is de-asserted and the
+        *                  Status bits return to 0. Note that if the result of the next conversion is greater 
+        *                  than TH or less than TL, the ALARM output will assert and the Status bit(s) will set.
+        * 
+        * @param[in]    mode_t
+        * 
+        * @return       0 on success, error code on failure
+        */  
         int set_cmp_int_mode(mode_t mode);
         
     private:

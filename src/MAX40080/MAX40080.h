@@ -47,11 +47,7 @@
 #define MAX40080_ERR_CRC_MISMATCH       (-2)
 #define MAX40080_ERR_DATA_NOT_VALID     (-3)
 
-/*
- *
- * MAX40080 
- * 
- */
+
 class MAX40080 {
     public:
         typedef enum {
@@ -69,7 +65,8 @@ class MAX40080 {
             INTR_ID_UNDER_V          = 1<<4,   
             INTR_ID_I2C_TIMEOUT      = 1<<5, 
             INTR_ID_OVERFLOW_WARNING = 1<<6, 
-            INTR_ID_OVERFLOW         = 1<<7
+            INTR_ID_OVERFLOW         = 1<<7,
+            INTR_ID_ALL              = 0xFF
         } intr_id_t;
 
         typedef enum {
@@ -157,24 +154,123 @@ class MAX40080 {
             } bits;
         } reg_fifo_cfg_t;
         
-        // constructer
+        /**
+        * @brief    Constructer to driver sensor i2c interface
+        *
+        * @param[in]    i2c: I2C instance
+        * @param[in]    i2c_addr: slave address
+        */
         MAX40080(TwoWire *i2c, uint8_t i2c_addr, float shuntResistor);
-        //
+
+        /**
+        * @brief    Must be call one time before using class methods
+        *
+        */
         void begin(void);
         
+        /**
+        * @brief        To get status register of target. 
+        *
+        * @param[out]   stat: Decoded status register
+        *
+        * @return       0 on success, error code on failure
+        */ 
         int get_status(reg_status_t &stat);
-        int flush_fifo(void);
-        int set_interrupt_status(intr_id_t interrupt, bool status);
-        int clear_interrupt_flag(intr_id_t interrupt);
-        int clear_interrupt_flags(void);
 
+        /**
+        * @brief        Flush fifo. 
+        * 
+        * @return       0 on success, error code on failure
+        */  
+        int flush_fifo(void);
+
+        /**
+        * @brief        Enable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_enable(intr_id_t id);
+
+        /**
+        * @brief        Disable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_disable(intr_id_t id);
+        
+        /**
+        * @brief    Clear the interrupt flags, 
+        *
+        * @return   0 on success, error code on failure
+        */
+        int irq_clear_flag(intr_id_t id = INTR_ID_ALL);
+
+        /**
+        * @brief        Read configuration register of target. 
+        *
+        * @param[out]   cfg: Decoded configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_configuration(reg_cfg_t &cfg);
+
+        /**
+        * @brief        Set configuration register of target. 
+        *
+        * @param[in]    cfg: Decoded configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
         int set_configuration(reg_cfg_t  cfg);
+
+        /**
+        * @brief        Read fifo configuration register of target. 
+        *
+        * @param[out]   cfg: Decoded fifo configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_fifo_configuration(reg_fifo_cfg_t &cfg);
+
+        /**
+        * @brief        Set fifo configuration register of target. 
+        *
+        * @param[in]    cfg: Decoded fifo configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
         int set_fifo_configuration(reg_fifo_cfg_t  cfg);
 
+        /**
+        * @brief        Read voltage value. 
+        *
+        * @param[out]    voltage
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_voltage(float &voltage);
+
+        /**
+        * @brief        Read current value. 
+        *
+        * @param[out]   current
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_current(float  &current);
+
+        /**
+        * @brief        Read current and voltage values. 
+        *
+        * @param[out]   current
+        * @param[out]   voltage
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_current_and_voltage(float &current, float &voltage);
 
         int get_threshold_over_current(float  &current);
@@ -188,6 +284,11 @@ class MAX40080 {
         int set_threshold_under_voltage(float voltage);
         int set_wakeup_current(float  current);
 
+        /**
+        * @brief        Send quick command, it is used for single mode conversion 
+        *
+        * @return       0 on success, error code on failure
+        */
         int send_quick_command(void);
         
         // Register direct access function
@@ -205,7 +306,6 @@ class MAX40080 {
         
         uint16_t convert_current_2_count(float current);
         float convert_count_2_current(uint16_t count);
-
 };
 
 #endif /* _MAX40080_H_ */

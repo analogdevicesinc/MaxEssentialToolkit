@@ -71,7 +71,7 @@ void setup() {
     }
 
     // enable interrupt
-    ret = sensor.set_interrupt_status(MAX40080::INTR_ID_OVERFLOW_WARNING, true);
+    ret = sensor.irq_enable(MAX40080::INTR_ID_OVERFLOW_WARNING);
     if (ret) {
         Serial.println("Set interrupt failed!");
     }
@@ -84,7 +84,7 @@ void loop()  {
     
     if (pin_state == LOW) {
         //
-        sensor.clear_interrupt_flags();
+        sensor.irq_clear_flag();
 
         int fifo_data_count = 0;
         float voltage;

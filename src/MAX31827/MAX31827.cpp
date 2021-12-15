@@ -443,7 +443,7 @@ int MAX31827::set_fault_number(fault_t fault)
     return ret;
 }
 
-int MAX31827::start_temp_conversion(conv_period_t period)
+int MAX31827::start_temp_conversion(conv_period_t period /*= PERIOD_ONE_SHOT */)
 {
     int  ret = 0;
     uint16_t cfg;

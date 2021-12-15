@@ -178,17 +178,6 @@ int MAX31889::reset_registers(void)
     return ret;
 }
 
-int MAX31889::clear_flags(void)
-{
-    int ret = 0;
-    uint8_t val8;
-
-    // reading status register will clear flags
-    ret = read_register(MAX31889_R_STATUS, &val8);
-
-    return ret;
-}
-
 int MAX31889::get_status(reg_status_t &stat)
 {
     int ret = 0;
@@ -276,32 +265,58 @@ int MAX31889::get_gpio_state(gpio_t gpio)
     }
 }
 
-int MAX31889::set_interrupt(int_mode_t interrupt, bool is_enable)
+int MAX31889::irq_enable(intr_id_t id)
 {
     int ret = 0;
     uint8_t byt;
-    uint8_t requested_irq = (uint8_t)interrupt;
+    uint8_t requested_irq = (uint8_t)id;
 
     // mask other bits
-    requested_irq &= (uint8_t)(INT_TEMP_RDY | INT_TEMP_HIGH | INT_TEMP_LOW | INT_FIFO_ALMOST_FULL);
+    requested_irq &= (uint8_t)(INTR_ID_TEMP_RDY | INTR_ID_TEMP_HIGH | INTR_ID_TEMP_LOW | INTR_ID_FIFO_ALMOST_FULL);
 
     ret = read_register(MAX31889_R_INT_EN, &byt);
     if (ret) {
         return ret;
     }
 
-    if (is_enable) {
-          byt |= requested_irq;   // enable interrupt
-    } else {
-          byt &= ~requested_irq;  // disable interrupt
-    }
-
+    byt |= requested_irq;   // enable interrupt
     ret = write_register(MAX31889_R_INT_EN, &byt);
 
     return ret;
 }
 
-int MAX31889::set_alarm_temp(float temp_low, float temp_high)
+int MAX31889::irq_disable(intr_id_t id)
+{
+    int ret = 0;
+    uint8_t byt;
+    uint8_t requested_irq = (uint8_t)id;
+
+    // mask other bits
+    requested_irq &= (uint8_t)(INTR_ID_TEMP_RDY | INTR_ID_TEMP_HIGH | INTR_ID_TEMP_LOW | INTR_ID_FIFO_ALMOST_FULL);
+
+    ret = read_register(MAX31889_R_INT_EN, &byt);
+    if (ret) {
+        return ret;
+    }
+
+    byt &= ~requested_irq;  // disable interrupt
+    ret = write_register(MAX31889_R_INT_EN, &byt);
+
+    return ret;
+}
+
+int MAX31889::irq_clear_flag(intr_id_t id /*=INTR_ID_ALL*/)
+{
+    int ret = 0;
+    uint8_t val8;
+
+    // reading status register will clear flags
+    ret = read_register(MAX31889_R_STATUS, &val8);
+
+    return ret;
+}
+
+int MAX31889::set_alarm(float temp_low, float temp_high)
 {
     int ret = 0;
     uint8_t buf[4];
@@ -320,7 +335,7 @@ int MAX31889::set_alarm_temp(float temp_low, float temp_high)
     return ret;
 }
 
-int MAX31889::get_alarm_temp(float &temp_low, float &temp_high)
+int MAX31889::get_alarm(float &temp_low, float &temp_high)
 {
     int ret = 0;
     uint8_t buf[4];
@@ -380,7 +395,7 @@ int MAX31889::get_num_of_sample(void)
 
     ret = read_register(MAX31889_R_FIFO_OVF_CNT, &ovf_count);
     if (ret) {
-        return ret;
+        return -1;
     }
 
     if (ovf_count == 0) {
@@ -442,7 +457,7 @@ int MAX31889::set_almost_full_depth(unsigned int num_of_samples)
     return ret;
 }
 
-int MAX31889::get_fifo_cfg(fifo_cfg_t &cfg)
+int MAX31889::get_fifo_configuration(reg_fifo_cfg_t &cfg)
 {
     int ret = 0;
     uint8_t val8;
@@ -460,7 +475,7 @@ int MAX31889::get_fifo_cfg(fifo_cfg_t &cfg)
     return ret;
 }
 
-int MAX31889::set_fifo_cfg(fifo_cfg_t cfg)
+int MAX31889::set_fifo_configuration(reg_fifo_cfg_t cfg)
 {
     int ret = 0;
     uint8_t val8 = 0;

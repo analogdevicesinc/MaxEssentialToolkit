@@ -69,7 +69,7 @@ void setup() {
     }
 
     // enable interrupt
-    sensor.set_interrupt_status(MAX40080::INTR_ID_CONV_READY, true);
+    sensor.irq_enable(MAX40080::INTR_ID_CONV_READY);
 
     // For single convertion quick command need to be send
     sensor.send_quick_command();
@@ -93,7 +93,7 @@ void loop()  {
             Serial.println(voltage, 4);
         }
 
-        sensor.clear_interrupt_flag(MAX40080::INTR_ID_CONV_READY);
+        sensor.irq_clear_flag(MAX40080::INTR_ID_CONV_READY);
         
         // Resend conversion command
         sensor.send_quick_command();   

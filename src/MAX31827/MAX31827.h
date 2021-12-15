@@ -44,11 +44,7 @@
 #define MAX31827_ERR_UNKNOWN            (-1)
 #define MAX31827_ERR_CRC_MISMATCH       (-2)
 
-/*
- *
- * MAX31827 Temperature Sensor
- * 
- */
+
 class MAX31827 {
     public:
         typedef enum {
@@ -109,31 +105,174 @@ class MAX31827 {
         } reg_cfg_t;
 
 
-        // constructer
+        /**
+        * @brief        Constructer to driver sensor over i2c interface
+        *
+        * @param[in]    i2c: I2C instance address
+        * @param[in]    i2c_addr: I2C addr
+        */
         MAX31827(TwoWire *i2c, uint8_t i2c_addr);
-        //
+
+        /**
+        * @brief        Must be call one time before using class methods
+        *
+        */
         void begin(void);
-        //
+        
+        /**
+        * @brief        Read status flags of target  
+        *               There is not status register on MAX31827 
+        *               this function read configuration register and 
+        *               provide status related flag in status_t structure
+        *
+        * @param[out]   status_t
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_status(status_t &stat);
-        //
+        
+        /**
+        * @brief        Read configuration register of target. 
+        *
+        * @param[out]   reg_cfg_t
+        *
+        * @return       0 on success, error code on failure
+        */
         int get_configuration(reg_cfg_t &cfg);
+
+        /**
+        * @brief        Set configuration register of target.
+        *
+        * @param[in]    reg_cfg_t
+        *
+        * @return       0 on success, error code on failure
+        */
         int set_configuration(reg_cfg_t cfg);
         
-        //
+        /**
+        * @brief        Set alarm low and alarm high. 
+        *
+        * @param[in]    temp_low: Low alarm temperature
+        * @param[in]    temp_hig: High alarm temperature
+        * 
+        * @return       0 on success, error code on failure
+        */ 
         int set_alarm(float temp_low, float temp_high);
+        
+        /**
+        * @brief        Get existing alarm low and alarm high values. 
+        *
+        * @param[out]   temp_low: Existing low alarm temperature
+        * @param[out]   temp_high: Existing high alarm temperature
+        * 
+        * @return       0 on success, error code on failure
+        */ 
         int get_alarm(float &temp_low, float &temp_high);
+
+        /**
+        * @brief        Set alarm hysteresis. 
+        *
+        * @param[in]    tl_hyst: low hysteresis
+        * @param[in]    th_hyst: high hysteresis
+        * 
+        * @return       0 on success, error code on failure
+        */ 
         int set_alarm_hyst(float tl_hyst, float th_hyst);
+
+        /**
+        * @brief        Get existing alarm hysteresis
+        *
+        * @param[out]   tl_hyst: low hysteresis
+        * @param[out]   th_hyst: high hysteresis
+        * 
+        * @return       0 on success, error code on failure
+        */         
         int get_alarm_hyst(float &tl_hyst, float &th_hyst);
+        
+        /**
+        * @brief        Set temperature on specific register
+        *
+        * @param[in]    temp: temperature value
+        * @param[in]    register: Register address,
+        *               please take a look MAX31827_registers.h file
+        * 
+        * @return       0 on success, error code on failure
+        */         
         int set_temp(float temp, uint8_t register);
 
-        int start_temp_conversion(conv_period_t period);
-        int get_temp(float &temp, uint8_t register=MAX31827_R_TEMPERATURE);
-        //
+        /**
+        * @brief        Start temperature conversion.
+        *
+        * @param[in]    conv_period_t
+        * 
+        * @return       0 on success, error code on failure
+        */
+        int start_temp_conversion(conv_period_t period = PERIOD_ONE_SHOT);
+
+        /**
+        * @brief        Read temperature value. 
+        *
+        * @param[out]   tmp: Temperature value that measured
+        * @param[in]    register: Temperature register address
+        *               please take a look MAX31827_registers.h file
+        * 
+        * @return       0 on success, error code on failure
+        */
+        int get_temp(float &temp, uint8_t register = MAX31827_R_TEMPERATURE);
+        
+        /**
+        * @brief        Set i2c timeout status. 
+        *
+        * @param[in]    True to enable i2c timeout, false to disable it
+        * 
+        * @return       0 on success, error code on failure
+        */
         int set_timeout_status(bool enable);
+
+        /**
+        * @brief        Set temperature resolution 
+        *
+        * @param[in]    resolution_t
+        * 
+        * @return       0 on success, error code on failure
+        */
         int set_resolution(resolution_t res);
+
+        /**
+        * @brief        Set alarm pin polarity
+        *
+        * @param[in]    True to high polarity,  false to low polarity
+        * 
+        * @return       0 on success, error code on failure
+        */
         int set_alarm_polarity(bool high);
+
+        /**
+        * @brief        Set compare interrupt mode function
+        *
+        * @param[in]    mode_t
+        * 
+        * @return       0 on success, error code on failure
+        */       
         int set_cmp_int_mode(mode_t mode);
+
+        /**
+        * @brief        Select how many consecutive temperature faults must occur 
+        *               before overtemperature or undertemperature faults flag arise
+        *
+        * @param[in]    fault_t
+        * 
+        * @return       0 on success, error code on failure
+        */       
         int set_fault_number(fault_t fault);
+
+        /**
+        * @brief        Enable disable CRC check
+        *
+        * @param[in]    True to enable crc check, false to disable crc check
+        * 
+        * @return       0 on success, error code on failure
+        */    
         int set_pec_status(bool enable);
 
         // Register direct access function

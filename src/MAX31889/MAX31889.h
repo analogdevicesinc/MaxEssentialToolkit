@@ -44,11 +44,7 @@
 #define MAX31889_FIFO_DEPTH         32   // Max Sample count in fifo
 #define MAX31889_DEFAULT_I2C_ADDR   0x50 // 7 bit address
 
-/*
- *
- * MAX31889 Temperature Sensor
- * 
- */
+
 class MAX31889
 {
     public:
@@ -68,11 +64,12 @@ class MAX31889
         } gpio_mode_t;
 
         typedef enum {
-            INT_TEMP_RDY         = MAX31889_F_INT_EN_TEMP_RDY,
-            INT_TEMP_HIGH        = MAX31889_F_INT_EN_TEMP_HI,
-            INT_TEMP_LOW         = MAX31889_F_INT_EN_TEMP_LO,
-            INT_FIFO_ALMOST_FULL = MAX31889_F_INT_EN_A_FULL
-        } int_mode_t;
+            INTR_ID_TEMP_RDY         = MAX31889_F_INT_EN_TEMP_RDY,
+            INTR_ID_TEMP_HIGH        = MAX31889_F_INT_EN_TEMP_HI,
+            INTR_ID_TEMP_LOW         = MAX31889_F_INT_EN_TEMP_LO,
+            INTR_ID_FIFO_ALMOST_FULL = MAX31889_F_INT_EN_A_FULL,
+            INTR_ID_ALL              = 0xFF
+        } intr_id_t;
 
         typedef union {
             uint8_t raw;
@@ -95,7 +92,7 @@ class MAX31889
                 uint8_t flush_fifo    : 1; // 
                 uint8_t               : 3; // not used
             } bits;
-        } fifo_cfg_t;
+        } reg_fifo_cfg_t;
 
         typedef struct {
             uint8_t rom_id[6];
@@ -103,34 +100,177 @@ class MAX31889
         } id_t;
 
 
-        // constructer
+        /**
+        * @brief    Constructer to driver sensor over i2c interface
+        *
+        * @param[in]    i2c: I2C instance
+        * @param[in]    i2c_addr: slave address
+        */
         MAX31889(TwoWire *i2c, uint8_t i2c_addr = MAX31889_DEFAULT_I2C_ADDR);
-        void begin(void);
-        // identifier
-        int get_id(id_t &id);
-        //
-        int clear_flags(void);
-        int get_status(reg_status_t &stat);
-        int set_interrupt(int_mode_t interrupt, bool is_enable);
-        // gpio functions
-        int config_gpio(gpio_t gpio, gpio_mode_t mode);
-        int get_gpio_state(gpio_t gpio); // get 1 or 0
-        int set_gpio_state(gpio_t gpio, int state);// state 1 or 0
-        //
-        int get_alarm_temp(float &temp_low, float &temp_high);
-        int set_alarm_temp(float temp_low=-40.0, float temp_high=125.0);
 
+        /**
+        * @brief    Must be call one time before using class methods
+        *
+        */
+        void begin(void);
+
+        /**
+        * @brief        Read targver version and part id
+        * 
+        * @param[out]   id_t
+        *
+        * @return       0 on success, error code on failure
+        */
+        int get_id(id_t &id);
+
+        /**
+        * @brief        To get status register of target. 
+        *
+        * @param[out]   stat: Decoded status register
+        *
+        * @return       0 on success, error code on failure
+        */        
+        int get_status(reg_status_t &stat);
+
+        /**
+        * @brief        Enable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_enable(intr_id_t id);
+
+        /**
+        * @brief        Disable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_disable(intr_id_t id);
+        
+        /**
+        * @brief    Clear the interrupt flags, 
+        *
+        * @return   0 on success, error code on failure
+        */
+        int irq_clear_flag(intr_id_t id = INTR_ID_ALL);
+
+        /**
+        * @brief        Configure gpio, select GPIO0/1 working mechanism 
+        *
+        * @param[in]    gpio_t, gpio number
+        * @param[in]    gpio_mode_t 
+        *
+        * @return       0 on success, error code on failure
+        */
+        int config_gpio(gpio_t gpio, gpio_mode_t mode);
+
+        /**
+        * @brief        Read current gpio state 
+        *
+        * @param[in]    gpio_t, gpio number
+        *
+        * @return       1 on high, 0 on low, others on error
+        */
+        int get_gpio_state(gpio_t gpio);
+
+        /**
+        * @brief        Set gpio value 
+        *
+        * @param[in]    gpio_t, gpio number
+        * @param[in]    1 to high, 0 to low
+        *
+        * @return       0 on success, error code on failure
+        */
+        int set_gpio_state(gpio_t gpio, int state);
+     
+        /**
+        * @brief        Get existing alarm low and alarm high values. 
+        *
+        * @param[out]   temp_low: Existing low alarm temperature
+        * @param[out]   temp_hig: Existing high alarm temperature
+        * 
+        * @return       0 on success, error code on failure
+        */
+        int get_alarm(float &temp_low, float &temp_high);
+
+        /**
+        * @brief        Set alarm low and alarm high. 
+        *
+        * @param[in]    temp_low: Low alarm temperature
+        * @param[in]    temp_hig: High alarm temperature
+        * 
+        * @return       0 on success, error code on failure
+        */ 
+        int set_alarm(float temp_low=-40.0, float temp_high=125.0);
+
+        /**
+        * @brief        Start temperature conversion.
+        *
+        * 
+        * @return       0 on success, error code on failure
+        */
         int start_temp_conversion(void);
+
+         /**
+        * @brief        Get number of samples in fifo.
+        *
+        * 
+        * @return       -1 on failure, others number of samples
+        */       
         int get_num_of_sample(void);
+
+        /**
+        * @brief        Read temperature value. 
+        *
+        * @param[out]   tmp: Temperature value that measured
+        * @param[in]    num_of_samples: Number of samples that would like to read
+        * 
+        * @return       0 on success, error code on failure
+        */        
         int get_temp(float *temp, int num_of_samples=1);
         
-        // fifo functions
+        /**
+        * @brief        Flush fifo. 
+        * 
+        * @return       0 on success, error code on failure
+        */  
         int flush_fifo();
-        int get_fifo_cfg(fifo_cfg_t &cfg);
-        int set_fifo_cfg(fifo_cfg_t cfg);
+
+        /**
+        * @brief        Read configuration register of sensor.
+        *
+        * @param[out]   cfg: Decoded fifo configuration register
+        *
+        * @return       0 on success, error code on failure
+        */       
+        int get_fifo_configuration(reg_fifo_cfg_t &cfg);
+        
+        /**
+        * @brief        Set configuration register of sensor.
+        *
+        * @param[in]    fifo_configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
+        int set_fifo_configuration(reg_fifo_cfg_t cfg);
+        
+        /**
+        * @brief        Set allmost full interrupt depth. 
+        *
+        * @param[in]    number of sample
+        *
+        * @return       0 on success, error code on failure
+        */
         int set_almost_full_depth(unsigned int num_of_samples);
 
-        // generic functions
+        /**
+        * @brief        Reset all sensor register 
+        *
+        * @return       0 on success, error code on failure
+        */
         int reset_registers(void);
 
         // Register access function

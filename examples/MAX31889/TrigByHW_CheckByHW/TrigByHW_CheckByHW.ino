@@ -63,7 +63,7 @@ void setup()  {
     // Connects to MAX31889 GPIO0 pin
     pinMode(pin_alarm, INPUT);
 
-    ret = temp_sensor.set_interrupt(MAX31889::INT_TEMP_RDY, true);
+    ret = temp_sensor.irq_enable(MAX31889::INTR_ID_TEMP_RDY);
     if (ret) {
         Serial.println("Interrupt initialization failed!");
     }
@@ -90,6 +90,6 @@ void loop()  {
           Serial.println(temp, 4);
         }
         
-        temp_sensor.clear_flags();
+        temp_sensor.irq_clear_flag();
     }
 }

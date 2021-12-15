@@ -40,7 +40,7 @@ void setup()  {
     temp_sensor.begin();
     print_sensor_info();
 
-    ret = temp_sensor.set_alarm_temp(ALARM_LOW, ALARM_HIGH);
+    ret = temp_sensor.set_alarm(ALARM_LOW, ALARM_HIGH);
     if (ret) {
         Serial.println("Alarm configure failed!");
     }
