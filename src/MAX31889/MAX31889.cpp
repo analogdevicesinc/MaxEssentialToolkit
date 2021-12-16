@@ -431,13 +431,13 @@ int MAX31889::flush_fifo(void)
     uint8_t val8;
     uint16_t count;
 
-    ret = read_register(MAX31889_R_FIFO_CONF2, &val8);
+    ret = read_register(MAX31889_R_FIFO_CFG2, &val8);
     if (ret) {
         return ret;
     }
 
-    val8 |= MAX31889_F_FIFO_CONF2_FLUSH_FIFO;
-    ret = write_register(MAX31889_R_FIFO_CONF2, &val8);
+    val8 |= MAX31889_F_FIFO_CFG2_FLUSH_FIFO;
+    ret = write_register(MAX31889_R_FIFO_CFG2, &val8);
 
     return ret;
 }
@@ -452,7 +452,7 @@ int MAX31889::set_almost_full_depth(unsigned int num_of_samples)
     }
 
     byt = MAX31889_FIFO_DEPTH - num_of_samples;
-    ret = write_register(MAX31889_R_FIFO_CONF, &byt);
+    ret = write_register(MAX31889_R_FIFO_CFG, &byt);
 
     return ret;
 }
@@ -462,15 +462,15 @@ int MAX31889::get_fifo_configuration(reg_fifo_cfg_t &cfg)
     int ret = 0;
     uint8_t val8;
 
-    ret = read_register(MAX31889_R_FIFO_CONF2, &val8);
+    ret = read_register(MAX31889_R_FIFO_CFG2, &val8);
     if (ret) {
         return ret;
     }
 
-    cfg.bits.fifo_ro       = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_FIFO_RO_POS,       MAX31889_F_FIFO_CONF2_FIFO_RO);
-    cfg.bits.a_full_type   = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_A_FULL_TYPE_POS,   MAX31889_F_FIFO_CONF2_A_FULL_TYPE);
-    cfg.bits.fifo_stat_clr = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR_POS, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR); 
-    cfg.bits.flush_fifo    = GET_BIT_VAL(val8, MAX31889_F_FIFO_CONF2_FLUSH_FIFO_POS,    MAX31889_F_FIFO_CONF2_FLUSH_FIFO); 
+    cfg.bits.fifo_ro       = GET_BIT_VAL(val8, MAX31889_F_FIFO_CFG2_FIFO_RO_POS,       MAX31889_F_FIFO_CFG2_FIFO_RO);
+    cfg.bits.a_full_type   = GET_BIT_VAL(val8, MAX31889_F_FIFO_CFG2_A_FULL_TYPE_POS,   MAX31889_F_FIFO_CFG2_A_FULL_TYPE);
+    cfg.bits.fifo_stat_clr = GET_BIT_VAL(val8, MAX31889_F_FIFO_CFG2_FIFO_STAT_CLR_POS, MAX31889_F_FIFO_CFG2_FIFO_STAT_CLR); 
+    cfg.bits.flush_fifo    = GET_BIT_VAL(val8, MAX31889_F_FIFO_CFG2_FLUSH_FIFO_POS,    MAX31889_F_FIFO_CFG2_FLUSH_FIFO); 
 
     return ret;
 }
@@ -480,12 +480,12 @@ int MAX31889::set_fifo_configuration(reg_fifo_cfg_t cfg)
     int ret = 0;
     uint8_t val8 = 0;
 
-    val8 |= SET_BIT_VAL(cfg.bits.fifo_ro ,      MAX31889_F_FIFO_CONF2_FIFO_RO_POS,       MAX31889_F_FIFO_CONF2_FIFO_RO);
-    val8 |= SET_BIT_VAL(cfg.bits.a_full_type,   MAX31889_F_FIFO_CONF2_A_FULL_TYPE_POS,   MAX31889_F_FIFO_CONF2_A_FULL_TYPE);
-    val8 |= SET_BIT_VAL(cfg.bits.fifo_stat_clr, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR_POS, MAX31889_F_FIFO_CONF2_FIFO_STAT_CLR);
-    val8 |= SET_BIT_VAL(cfg.bits.flush_fifo,    MAX31889_F_FIFO_CONF2_FLUSH_FIFO_POS,    MAX31889_F_FIFO_CONF2_FLUSH_FIFO);
+    val8 |= SET_BIT_VAL(cfg.bits.fifo_ro ,      MAX31889_F_FIFO_CFG2_FIFO_RO_POS,       MAX31889_F_FIFO_CFG2_FIFO_RO);
+    val8 |= SET_BIT_VAL(cfg.bits.a_full_type,   MAX31889_F_FIFO_CFG2_A_FULL_TYPE_POS,   MAX31889_F_FIFO_CFG2_A_FULL_TYPE);
+    val8 |= SET_BIT_VAL(cfg.bits.fifo_stat_clr, MAX31889_F_FIFO_CFG2_FIFO_STAT_CLR_POS, MAX31889_F_FIFO_CFG2_FIFO_STAT_CLR);
+    val8 |= SET_BIT_VAL(cfg.bits.flush_fifo,    MAX31889_F_FIFO_CFG2_FLUSH_FIFO_POS,    MAX31889_F_FIFO_CFG2_FLUSH_FIFO);
 
-    ret = write_register(MAX31889_R_FIFO_CONF2, &val8);
+    ret = write_register(MAX31889_R_FIFO_CFG2, &val8);
 
     return ret;
 }

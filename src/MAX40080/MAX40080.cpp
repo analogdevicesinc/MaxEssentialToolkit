@@ -304,57 +304,6 @@ int MAX40080::get_status(reg_status_t &stat)
     return ret;
 }
 
-int MAX40080::irq_enable(intr_id_t id)
-{
-    int ret;
-    uint8_t byt;
-
-    ret = read_register(MAX40080_R_INT_EN, &byt);
-    if (ret) {
-        return ret;
-    }
-
-    byt |= id;
-    ret = write_register(MAX40080_R_INT_EN, &byt);
-
-    return ret;
-}
-
-int MAX40080::irq_disable(intr_id_t id)
-{
-    int ret;
-    uint8_t byt;
-
-    ret = read_register(MAX40080_R_INT_EN, &byt);
-    if (ret) {
-        return ret;
-    }
-
-    byt &= ~id; 
-    ret = write_register(MAX40080_R_INT_EN, &byt);
-
-    return ret;
-}
-
-int MAX40080::irq_clear_flag(intr_id_t interrupt /*=INTR_ID_ALL*/)
-{
-    int ret;
-    uint8_t buf[2];
-
-    ret = read_register(MAX40080_R_STATUS, buf, 2);
-
-    if (interrupt == INTR_ID_ALL) {
-        buf[0] |= 0xff;//  set all flag
-    } else {
-        buf[0] = 0;
-        buf[0] |= (uint8_t)interrupt;//  set related flag
-    }
-    
-    ret = write_register(MAX40080_R_STATUS, buf, 2);
-
-    return ret;
-}
-
 int MAX40080::get_configuration(reg_cfg_t &cfg)
 {
     int ret;
@@ -462,6 +411,57 @@ int MAX40080::flush_fifo(void)
     
     ret = write_register(MAX40080_R_FIFO_CFG, buf, 2);
     
+    return ret;
+}
+
+int MAX40080::irq_enable(intr_id_t id)
+{
+    int ret;
+    uint8_t byt;
+
+    ret = read_register(MAX40080_R_INT_EN, &byt);
+    if (ret) {
+        return ret;
+    }
+
+    byt |= id;
+    ret = write_register(MAX40080_R_INT_EN, &byt);
+
+    return ret;
+}
+
+int MAX40080::irq_disable(intr_id_t id)
+{
+    int ret;
+    uint8_t byt;
+
+    ret = read_register(MAX40080_R_INT_EN, &byt);
+    if (ret) {
+        return ret;
+    }
+
+    byt &= ~id; 
+    ret = write_register(MAX40080_R_INT_EN, &byt);
+
+    return ret;
+}
+
+int MAX40080::irq_clear_flag(intr_id_t interrupt /*=INTR_ID_ALL*/)
+{
+    int ret;
+    uint8_t buf[2];
+
+    ret = read_register(MAX40080_R_STATUS, buf, 2);
+
+    if (interrupt == INTR_ID_ALL) {
+        buf[0] |= 0xff;//  set all flag
+    } else {
+        buf[0] = 0;
+        buf[0] |= (uint8_t)interrupt;//  set related flag
+    }
+    
+    ret = write_register(MAX40080_R_STATUS, buf, 2);
+
     return ret;
 }
 

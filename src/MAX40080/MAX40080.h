@@ -178,38 +178,6 @@ class MAX40080 {
         int get_status(reg_status_t &stat);
 
         /**
-        * @brief        Flush fifo. 
-        * 
-        * @return       0 on success, error code on failure
-        */  
-        int flush_fifo(void);
-
-        /**
-        * @brief        Enable interrupt
-        *
-        * @param[in]    id Interrupt id, one of INTR_ID_*
-        *
-        * @return       0 on success, error code on failure
-        */
-        int irq_enable(intr_id_t id);
-
-        /**
-        * @brief        Disable interrupt
-        *
-        * @param[in]    id Interrupt id, one of INTR_ID_*
-        *
-        * @return       0 on success, error code on failure
-        */
-        int irq_disable(intr_id_t id);
-        
-        /**
-        * @brief    Clear the interrupt flags, 
-        *
-        * @return   0 on success, error code on failure
-        */
-        int irq_clear_flag(intr_id_t id = INTR_ID_ALL);
-
-        /**
         * @brief        Read configuration register of target. 
         *
         * @param[out]   cfg: Decoded configuration register
@@ -244,6 +212,38 @@ class MAX40080 {
         * @return       0 on success, error code on failure
         */
         int set_fifo_configuration(reg_fifo_cfg_t  cfg);
+        
+        /**
+        * @brief        Flush fifo. 
+        * 
+        * @return       0 on success, error code on failure
+        */  
+        int flush_fifo(void);
+
+        /**
+        * @brief        Enable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_enable(intr_id_t id);
+
+        /**
+        * @brief        Disable interrupt
+        *
+        * @param[in]    id Interrupt id, one of INTR_ID_*
+        *
+        * @return       0 on success, error code on failure
+        */
+        int irq_disable(intr_id_t id);
+        
+        /**
+        * @brief    Clear the interrupt flags, 
+        *
+        * @return   0 on success, error code on failure
+        */
+        int irq_clear_flag(intr_id_t id = INTR_ID_ALL);
 
         /**
         * @brief        Read voltage value. 

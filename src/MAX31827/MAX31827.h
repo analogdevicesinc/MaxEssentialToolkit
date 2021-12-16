@@ -188,17 +188,6 @@ class MAX31827 {
         * @return       0 on success, error code on failure
         */         
         int get_alarm_hyst(float &tl_hyst, float &th_hyst);
-        
-        /**
-        * @brief        Set temperature on specific register
-        *
-        * @param[in]    temp: temperature value
-        * @param[in]    register: Register address,
-        *               please take a look MAX31827_registers.h file
-        * 
-        * @return       0 on success, error code on failure
-        */         
-        int set_temp(float temp, uint8_t register);
 
         /**
         * @brief        Start temperature conversion.
@@ -220,61 +209,6 @@ class MAX31827 {
         */
         int get_temp(float &temp, uint8_t register = MAX31827_R_TEMPERATURE);
         
-        /**
-        * @brief        Set i2c timeout status. 
-        *
-        * @param[in]    True to enable i2c timeout, false to disable it
-        * 
-        * @return       0 on success, error code on failure
-        */
-        int set_timeout_status(bool enable);
-
-        /**
-        * @brief        Set temperature resolution 
-        *
-        * @param[in]    resolution_t
-        * 
-        * @return       0 on success, error code on failure
-        */
-        int set_resolution(resolution_t res);
-
-        /**
-        * @brief        Set alarm pin polarity
-        *
-        * @param[in]    True to high polarity,  false to low polarity
-        * 
-        * @return       0 on success, error code on failure
-        */
-        int set_alarm_polarity(bool high);
-
-        /**
-        * @brief        Set compare interrupt mode function
-        *
-        * @param[in]    mode_t
-        * 
-        * @return       0 on success, error code on failure
-        */       
-        int set_cmp_int_mode(mode_t mode);
-
-        /**
-        * @brief        Select how many consecutive temperature faults must occur 
-        *               before overtemperature or undertemperature faults flag arise
-        *
-        * @param[in]    fault_t
-        * 
-        * @return       0 on success, error code on failure
-        */       
-        int set_fault_number(fault_t fault);
-
-        /**
-        * @brief        Enable disable CRC check
-        *
-        * @param[in]    True to enable crc check, false to disable crc check
-        * 
-        * @return       0 on success, error code on failure
-        */    
-        int set_pec_status(bool enable);
-
         // Register direct access function
         int read_register(uint8_t register, uint16_t &val);
         int write_register(uint8_t register, uint16_t val);
@@ -283,6 +217,8 @@ class MAX31827 {
         TwoWire *m_i2c;
         uint8_t  m_slave_addr;
         bool     m_pec_status;
+
+        int set_temp(float temp, uint8_t register);
 };
 
 #endif /* _MAX31827_H_ */

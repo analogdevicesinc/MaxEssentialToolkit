@@ -30,12 +30,13 @@ void setup()  {
         case MAX31827::RESOLUTION_12_BIT:  Serial.println("Current Resolution 12 bits");   break;
     }
     
-    if (cfg.bits.resolution != MAX31827::RESOLUTION_12_BIT) { // Update resolution if it is not 12bits
-        ret = temp_sensor.set_resolution(MAX31827::RESOLUTION_12_BIT);
+    if (cfg.bits.resolution != MAX31827::RESOLUTION_12_BIT) { 
+        cfg.bits.resolution = MAX31827::RESOLUTION_12_BIT; // Update resolution if it is not 12bits
+        ret = temp_sensor.set_configuration(cfg);
         if (ret) {
-            Serial.println("Resolution set failed!");    
+            Serial.println("Set configuration set failed!");    
         } else {
-            Serial.println("Resolution is updated to 12 bits");
+            Serial.println("Configuration is updated to 12 bits");
         }
     }
     

@@ -24,11 +24,19 @@ void setup()  {
 
     temp_sensor.begin();
 
-    ret = temp_sensor.set_resolution(MAX31827::RESOLUTION_12_BIT);
+    MAX31827::reg_cfg_t cfg;
+    ret = temp_sensor.get_configuration(cfg);
     if (ret) {
-        Serial.println("Resolution set failed");    
+        Serial.println("Get configuration failed!");    
     }
-    
+
+    // Update resolution to 12bits
+    cfg.bits.resolution = MAX31827::RESOLUTION_12_BIT; 
+    ret = temp_sensor.set_configuration(cfg);
+    if (ret) {
+        Serial.println("Set configuration failed!");    
+    }
+
     ret = temp_sensor.set_alarm(ALARM_LOW, ALARM_HIGH);
     if (ret) {
         Serial.println("Set alarm failed!");

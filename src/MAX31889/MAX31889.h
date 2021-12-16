@@ -133,6 +133,24 @@ class MAX31889
         int get_status(reg_status_t &stat);
 
         /**
+        * @brief        Read configuration register of sensor.
+        *
+        * @param[out]   cfg: Decoded fifo configuration register
+        *
+        * @return       0 on success, error code on failure
+        */       
+        int get_fifo_configuration(reg_fifo_cfg_t &cfg);
+        
+        /**
+        * @brief        Set configuration register of sensor.
+        *
+        * @param[in]    fifo_configuration register
+        *
+        * @return       0 on success, error code on failure
+        */
+        int set_fifo_configuration(reg_fifo_cfg_t cfg);
+        
+        /**
         * @brief        Enable interrupt
         *
         * @param[in]    id Interrupt id, one of INTR_ID_*
@@ -238,24 +256,6 @@ class MAX31889
         * @return       0 on success, error code on failure
         */  
         int flush_fifo();
-
-        /**
-        * @brief        Read configuration register of sensor.
-        *
-        * @param[out]   cfg: Decoded fifo configuration register
-        *
-        * @return       0 on success, error code on failure
-        */       
-        int get_fifo_configuration(reg_fifo_cfg_t &cfg);
-        
-        /**
-        * @brief        Set configuration register of sensor.
-        *
-        * @param[in]    fifo_configuration register
-        *
-        * @return       0 on success, error code on failure
-        */
-        int set_fifo_configuration(reg_fifo_cfg_t cfg);
         
         /**
         * @brief        Set allmost full interrupt depth. 

@@ -572,7 +572,7 @@ int MAX31343::supply_select(power_mgmt_supply_t supply)
 	return ret;
 }
 
-int MAX31343::trickle_charger_enable(trickle_charger_path_t path)
+int MAX31343::trickle_charger_enable(trickle_charger_ohm_t path)
 {
     int ret;
     uint8_t reg = 0;

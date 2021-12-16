@@ -74,15 +74,20 @@ void setup()  {
     }
 
     delay(1);
-    ret = temp_sensor.set_cmp_int_mode(MAX31825::MODE_COMPARE);
-    if (ret) {
-        Serial.println("set_cmp_int_mode failed!");
-    }
-
+    
     MAX31825::reg_cfg_t cfg;
+    
     ret = temp_sensor.get_configuration(cfg);
     if (ret) {
         Serial.println("Get configuration failed!");
+    }
+
+    // Set configuration
+    cfg.bits.comp_int = MAX31825::MODE_COMPARE;
+
+    ret = temp_sensor.set_configuration(cfg);
+    if (ret) {
+        Serial.println("Set configuration failed!");
     } else {
         Serial.println("--------- Configuration Register (BIN Format) ---------");
         Serial.print("Convertion Rate: ");      Serial.println(cfg.bits.conversion_rate, BIN);

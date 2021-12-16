@@ -439,11 +439,14 @@ int MAX31825::set_configuration(reg_cfg_t cfg)
     int  ret = 0;
     uint8_t val8;
 
-    ret = read_scratchpad();
-    if (ret) {
-        return ret;
-    }
-    
+    /* m_scratchpad already includes current values of sensor 
+     * to increase performance no need to read it again
+     */
+    //ret = read_scratchpad();
+    //if (ret) {
+    //    return ret;
+    //}
+
     val8 = 0;
     val8 |= SET_BIT_VAL(cfg.bits.conversion_rate, MAX31825_F_CFG_CONV_RATE_POS,  MAX31825_F_CFG_CONV_RATE);
     val8 |= SET_BIT_VAL(cfg.bits.comp_int,        MAX31825_F_CFG_CMP_INT_POS,    MAX31825_F_CFG_CMP_INT);
@@ -451,95 +454,6 @@ int MAX31825::set_configuration(reg_cfg_t cfg)
     val8 |= SET_BIT_VAL(cfg.bits.format,          MAX31825_F_CFG_FORMAT_POS,     MAX31825_F_CFG_FORMAT);
 
     m_scratchpad[MAX31825_R_CFG] = val8;
-    ret = write_scratchpad();
-
-    return ret;
-}
-
-int MAX31825::set_conv_rate(conv_period_t period)
-{
-    int  ret = 0;
-    byte cfg;
-    
-    ret = read_scratchpad();
-    if (ret) {
-        return ret;
-    }
-    //
-    cfg  = SCRATCHPAD_GET_CFG(m_scratchpad);
-    cfg &= ~MAX31825_F_CFG_CONV_RATE;
-    cfg |= SET_BIT_VAL(period, MAX31825_F_CFG_CONV_RATE_POS, MAX31825_F_CFG_CONV_RATE);
-    
-    m_scratchpad[MAX31825_R_CFG] = cfg;
-    ret = write_scratchpad();
-
-    return ret;
-}
-
-int MAX31825::set_resolution(resolution_t resolution)
-{
-    int  ret = 0;
-    byte cfg;
-
-    ret = read_scratchpad();
-    if (ret) {
-        return ret;
-    }
-    cfg = SCRATCHPAD_GET_CFG(m_scratchpad);
-
-    // to switch shutdown mode
-    cfg &= ~MAX31825_F_CFG_CONV_RATE;
-    //
-    cfg &= ~MAX31825_F_CFG_RESOLUTION;
-    cfg |= SET_BIT_VAL(resolution, MAX31825_F_CFG_RESOLUTION_POS, MAX31825_F_CFG_RESOLUTION);
-    
-    m_scratchpad[MAX31825_R_CFG] = cfg;
-    ret = write_scratchpad();
-    
-    return ret;
-}
-
-int MAX31825::set_cmp_int_mode(mode_t mode)
-{
-    int  ret = 0;
-    byte cfg;
-    
-    ret = read_scratchpad();
-    if (ret) {
-        return ret;
-    }
-    cfg = SCRATCHPAD_GET_CFG(m_scratchpad);
-
-    if (mode == MODE_INTERRUPT) {
-        cfg |= MAX31825_F_CFG_CMP_INT;
-    } else {
-        cfg &= ~MAX31825_F_CFG_CMP_INT;
-    }
-    
-    m_scratchpad[MAX31825_R_CFG] = cfg;
-    ret = write_scratchpad();
-    
-    return ret;
-}
-
-int MAX31825::set_extend_mode(bool enable)
-{
-    int  ret = 0;
-    byte cfg;
-    
-    ret = read_scratchpad();
-    if (ret) {
-        return ret;
-    }
-    cfg = SCRATCHPAD_GET_CFG(m_scratchpad);
-
-    if (enable) {
-        cfg |= MAX31825_F_CFG_FORMAT;
-    } else {
-        cfg &= ~MAX31825_F_CFG_FORMAT;
-    }
-    
-    m_scratchpad[MAX31825_R_CFG] = cfg;
     ret = write_scratchpad();
 
     return ret;

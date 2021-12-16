@@ -115,7 +115,7 @@ public:
 	    SQW_OUT_FREQ_1HZ,	/**< 1Hz */
 	    SQW_OUT_FREQ_4KHZ,	/**< 4.098kHz */
 	    SQW_OUT_FREQ_8KHZ,	/**< 8.192kHz */
-	    SQW_OUT_FREQ_3KHZ,	/**< 32.768kHz */
+	    SQW_OUT_FREQ_32KHZ,	/**< 32.768kHz */
 	} sqw_out_freq_t;
 
 	/**

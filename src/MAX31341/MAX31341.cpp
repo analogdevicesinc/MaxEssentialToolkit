@@ -326,6 +326,14 @@ int MAX31341::set_time(const struct tm *time)
 		return ret;
 	}
 
+	val8 &= ~MAX31341_F_CFG2_SET_RTC;
+	ret = write_register(MAX31341_R_CFG2, &val8);
+    if (ret) {
+		return ret;
+	}
+
+    delay(10);
+
 	val8 |= MAX31341_F_CFG2_SET_RTC;
 	ret = write_register(MAX31341_R_CFG2, &val8);
     if (ret) {
@@ -337,6 +345,7 @@ int MAX31341::set_time(const struct tm *time)
 
 	val8 &= ~MAX31341_F_CFG2_SET_RTC;
 	ret = write_register(MAX31341_R_CFG2, &val8);
+
 
     return ret;
 }

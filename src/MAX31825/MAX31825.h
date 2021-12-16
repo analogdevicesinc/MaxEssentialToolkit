@@ -90,7 +90,7 @@ class MAX31825 {
                 uint8_t                 : 1; // 
                 uint8_t comp_int        : 1; // mode_t
                 uint8_t resolution      : 2; // resolution_t
-                uint8_t format          : 1; // 
+                uint8_t format          : 1; // 0 Normal format (max 128 C), 1 Extend format (Max 145 C)
             } bits;
         } reg_cfg_t;
 
@@ -201,57 +201,6 @@ class MAX31825 {
         * @return       0 on success, error code on failure
         */ 
         int get_alarm(float &temp_low, float &temp_high);
-
-        /**
-        * @brief        Set conversion rate 
-        *
-        * @param[in]    conv_period_t
-        * 
-        * @return       0 on success, error code on failure
-        */
-        int set_conv_rate(conv_period_t period);
-
-        /**
-        * @brief        Enable/disable extend mode
-        *               Normal format produces temperature data up to 128°C and
-        *               Extended format produces data up to and beyond the 145°C operating limit.
-        *
-        * @param[in]    True to enable extend mode, false to disable extend mode
-        * 
-        * @return       0 on success, error code on failure
-        */   
-        int set_extend_mode(bool enable);
-
-        /**
-        * @brief        Set temperature resolution
-        *
-        * @param[in]    resolution_t
-        * 
-        * @return       0 on success, error code on failure
-        */  
-        int set_resolution(resolution_t res);
-
-        /**
-        * @brief        Define comperator interrrupt working mechanism
-        *                  In Comparator mode, the ALARM output asserts and the
-        *                  Status bit is set to 1 when the temperature rises above the TH value 
-        *                  or falls below the TL value. The ALARM output de-asserts and 
-        *                  the Status bits return to 0 when the measured temperature returns to 
-        *                  a value ranging from TH to TL.
-        *
-        *                  In interrupt mode, exceeding TH or going
-        *                  below TL also asserts the ALARM output and sets the Status bits to 1. 
-        *                  ALARM remains asserted and the Status bits remain set to 1 until 
-        *                  a read operation is performed on any of the registers, 
-        *                  at which point ALARM is de-asserted and the
-        *                  Status bits return to 0. Note that if the result of the next conversion is greater 
-        *                  than TH or less than TL, the ALARM output will assert and the Status bit(s) will set.
-        * 
-        * @param[in]    mode_t
-        * 
-        * @return       0 on success, error code on failure
-        */  
-        int set_cmp_int_mode(mode_t mode);
         
     private:
         DS2482   *m_ds2482;

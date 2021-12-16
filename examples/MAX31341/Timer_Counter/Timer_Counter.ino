@@ -8,7 +8,7 @@ void setup() {
     Serial.begin(115200);
     Serial.println("---------------------");
     Serial.println("MAX31341 timer use case example:");
-    Serial.println("MAX31341 timer feature will be configured and timer count value will be display");
+    Serial.println("MAX31341 timer module will be configured then timer count value will be display");
     Serial.println(" ");
 
     rtc.begin();

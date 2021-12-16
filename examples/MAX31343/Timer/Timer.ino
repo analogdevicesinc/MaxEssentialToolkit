@@ -24,7 +24,7 @@ void setup() {
 
     Serial.begin(115200);
     Serial.println("---------------------");
-    Serial.println("Timer use case example:");
+    Serial.println("RTC timer use case example:");
     Serial.println(" ");
 
     pinMode(pin_interrupt, INPUT_PULLUP);

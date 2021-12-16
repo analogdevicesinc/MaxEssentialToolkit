@@ -108,7 +108,7 @@ class MAX31343
 	        TRICKLE_CHARGER_6K_D_S,   /**< 6Kohm in series with a diode+Schottky diode */
 	        TRICKLE_CHARGER_11K_D_S,  /**< 11Kohm in series with a diode+Schottky diode */
 	        TRICKLE_CHARGER_NO_CONNECTION,   /**< No Connection  */
-	    } trickle_charger_path_t;
+	    } trickle_charger_ohm_t;
 
 	    /**
 	    * @brief	Timer frequency selection
@@ -307,7 +307,7 @@ class MAX31343
 	    *
 	    * @return		0 on success, error code on failure
 	    */
-	    int trickle_charger_enable(trickle_charger_path_t path);
+	    int trickle_charger_enable(trickle_charger_ohm_t path);
 
 		/**
 		* @brief		Disable trickle charger

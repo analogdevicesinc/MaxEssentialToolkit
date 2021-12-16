@@ -9,7 +9,7 @@ void setup() {
 
     Serial.begin(115200);
     Serial.println("---------------------");
-    Serial.println("MAX31341 set get rtc read temperature case example:");
+    Serial.println("RTC temperature use case example:");
     Serial.println("Temperature will be read periodically");
     Serial.println(" ");
 
@@ -43,7 +43,7 @@ void loop()  {
         if (ret) {
             Serial.println("Temperature read failed!");
         } else {
-            Serial.print("Conversiton time: ");
+            Serial.print("Conversion time: ");
             Serial.print( MAX_LOOP_COUNTER - counter );
             Serial.print(" ms");
 

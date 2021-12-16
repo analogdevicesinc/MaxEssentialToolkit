@@ -10,7 +10,7 @@ void setup() {
 
     Serial.begin(115200);
     Serial.println("---------------------");
-    Serial.println("MAX31341 set get rtc use case example:");
+    Serial.println("Set get rtc use case example:");
     Serial.println("RTC will be set to specific value then it will be read every second");
     Serial.println(" ");
 
