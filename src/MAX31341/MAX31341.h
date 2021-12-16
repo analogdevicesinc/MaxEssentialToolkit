@@ -41,10 +41,9 @@
 #include <time.h>
 
 
+#define MAX31341_DRV_VERSION        "v0.0.1"
 
-/**
- * @brief	RTC base driver class for Maxim Max31341 RTC series.
- */
+
 class MAX31341
 {
 public:

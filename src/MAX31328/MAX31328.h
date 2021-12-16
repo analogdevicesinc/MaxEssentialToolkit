@@ -43,6 +43,8 @@
 #include <time.h>
 
 
+#define MAX31328_DRV_VERSION        "v0.0.1"
+
 #define MAX31328_ERR_UNKNOWN          (-1)
 #define MAX31328_ERR_BUSY             (-3)
 

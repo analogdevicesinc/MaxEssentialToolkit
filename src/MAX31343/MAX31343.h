@@ -41,12 +41,12 @@
 #include <Arduino.h>
 
 
+#define MAX31343_DRV_VERSION		"v0.0.1"
+
 #define MAX31343_ERR_UNKNOWN          (-1)
 #define MAX31343_ERR_BUSY             (-3)
 
-/**
- * @brief	RTC base driver class for Maxim Max3134x RTC series.
- */
+
 class MAX31343
 {
 	public:

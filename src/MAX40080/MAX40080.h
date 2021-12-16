@@ -40,8 +40,10 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define MAX40080_FULL_RANGE_VOLTAGE     (37.5f) // full Range 37.5V
 
+#define MAX40080_DRV_VERSION           "v0.0.1"
+
+#define MAX40080_FULL_RANGE_VOLTAGE     (37.5f) // full Range 37.5V
 
 #define MAX40080_ERR_UNKNOWN            (-1)
 #define MAX40080_ERR_CRC_MISMATCH       (-2)

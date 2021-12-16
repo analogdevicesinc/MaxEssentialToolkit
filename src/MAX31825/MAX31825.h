@@ -43,6 +43,9 @@
 #include <OneWire.h>  // Requires Onewire library 
 
 
+#define MAX31825_DRV_VERSION        "v0.0.1"
+
+
 class MAX31825 {
     public:
         typedef enum {
