@@ -43,7 +43,7 @@
 #define TEMP_RESOLUTION_FOR_9_BIT       (0.5f)
 #define TEMP_RESOLUTION_FOR_8_BIT       (1.0f)
 
-#define POLY    0x06 // # 0x106 = x^8 + x^2 + x^1  (0x06 -> 0x106)
+#define POLY    0x07 // # 0x107 = x^8 + x^2 + x^1 + x^0  (0x07 -> 0x107)
 
 /************************************ Private Functions ***********************/
 static uint8_t calc_crc8(uint8_t crc, uint8_t *buf, int len)
@@ -313,6 +313,9 @@ int MAX31827::set_configuration(reg_cfg_t cfg)
     val16 |= SET_BIT_VAL(cfg.bits.over_temp_stat,  MAX31827_F_CFG_OVER_TEMP_STAT_POS, MAX31827_F_CFG_OVER_TEMP_STAT);
 
     ret = write_register(MAX31827_R_CFG, val16);
+    if (ret == 0) {
+        m_pec_status = cfg.bits.pec_enable;
+    }
 
     return ret;
 }
