@@ -3,19 +3,18 @@
 MaxEssentialToolkit package includes arduino driver and usecase examples for MAXIM/ADI  RTC, temperature and current-sense amplifier sensors.
 Supported part numbers:
 
-- [MAX31328](https://datasheets.maximintegrated.com/en/ds/MAX31328.pdf)
-- [MAX31341](https://datasheets.maximintegrated.com/en/ds/MAX31341B-MAX31341C.pdf)
-- [MAX31343](https://datasheets.maximintegrated.com/en/ds/MAX31343.pdf)
-- [MAX31825](https://datasheets.maximintegrated.com/en/ds/MAX31825.pdf)
-- [MAX31827](https://datasheets.maximintegrated.com/en/ds/MAX31827-MAX31829.pdf)
-- [MAX31889](https://datasheets.maximintegrated.com/en/ds/MAX31889.pdf)
-- [MAX40080](https://datasheets.maximintegrated.com/en/ds/MAX40080.pdf)
+- [MAX31328](https://www.maximintegrated.com/en/products/analog/real-time-clocks/MAX31328.html)
+- [MAX31341](https://www.maximintegrated.com/en/products/analog/real-time-clocks/MAX31341B.html)
+- [MAX31343](https://www.maximintegrated.com/en/products/analog/real-time-clocks/MAX31343.html)
+- [MAX31825](https://www.maximintegrated.com/en/products/sensors/MAX31825.html)
+- [MAX31827](https://www.maximintegrated.com/en/products/sensors/MAX31827.html)
+- [MAX31889](https://www.maximintegrated.com/en/products/sensors/MAX31889.html)
+- [MAX40080](https://www.maximintegrated.com/en/products/analog/amplifiers/MAX40080.html)
 
 
 ## How to install
 There are two main options to install library:
 ### Option 1:
-Note: Not works yet, The project is not linked with Arduino library database yet.
  1. Open Arduino IDE
  2. Go into Tools -> Manage Libraries...
  3. Search for MaxEssentialToolkit

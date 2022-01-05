@@ -43,7 +43,7 @@
 #include <OneWire.h>  // Requires Onewire library 
 
 
-#define MAX31825_DRV_VERSION        "v0.0.1"
+#define MAX31825_DRV_VERSION        "v1.0.0"
 
 
 class MAX31825 {

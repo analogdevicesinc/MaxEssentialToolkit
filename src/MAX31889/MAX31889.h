@@ -41,7 +41,7 @@
 #include <Wire.h>
 
 
-#define MAX31889_DRV_VERSION      "v0.0.1"
+#define MAX31889_DRV_VERSION      "v1.0.0"
 
 #define MAX31889_FIFO_DEPTH         32   // Max Sample count in fifo
 #define MAX31889_DEFAULT_I2C_ADDR   0x50 // 7 bit address

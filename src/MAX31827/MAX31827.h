@@ -41,7 +41,7 @@
 #include <Wire.h>
 
 
-#define MAX31827_DRV_VERSION          "v0.0.1"
+#define MAX31827_DRV_VERSION          "v1.0.0"
 
 #define MAX31827_ERR_UNKNOWN            (-1)
 #define MAX31827_ERR_CRC_MISMATCH       (-2)
