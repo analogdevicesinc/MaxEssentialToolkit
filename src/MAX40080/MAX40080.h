@@ -41,7 +41,7 @@
 #include <Wire.h>
 
 
-#define MAX40080_DRV_VERSION           "v1.0.0"
+#define MAX40080_DRV_VERSION           "v1.0.1"
 
 #define MAX40080_FULL_RANGE_VOLTAGE     (37.5f) // full Range 37.5V
 

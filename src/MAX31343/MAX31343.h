@@ -41,7 +41,7 @@
 #include <Arduino.h>
 
 
-#define MAX31343_DRV_VERSION		"v1.0.0"
+#define MAX31343_DRV_VERSION		"v1.0.1"
 
 #define MAX31343_ERR_UNKNOWN          (-1)
 #define MAX31343_ERR_BUSY             (-3)

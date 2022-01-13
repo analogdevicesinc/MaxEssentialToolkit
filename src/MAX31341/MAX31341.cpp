@@ -77,13 +77,11 @@ int MAX31341::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
     }
 
     // Read    
-    m_i2c->requestFrom((char)m_slave_addr, (char)len, false);
+    m_i2c->requestFrom((char)m_slave_addr, (char)len, true);
 
     while (m_i2c->available()) { // slave may send less than requested
         buf[counter++] = m_i2c->read(); // receive a byte as character
     }
-    
-    m_i2c->endTransmission();
 
     //
     if (counter != len) {

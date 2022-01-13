@@ -75,15 +75,13 @@ int MAX31889::read_register(uint8_t reg, uint8_t *data, int len)
     }
 
     // READ
-    m_i2c->requestFrom((char)m_slave_addr, (char)len, false);
+    m_i2c->requestFrom((char)m_slave_addr, (char)len, true);
 
     while (m_i2c->available()) { // slave may send less than requested
         data[counter++] = m_i2c->read(); // receive a byte as character
     }
         
     ret = (counter == len) ? 0: -1;
-
-    m_i2c->endTransmission();
 
     if (ret != 0) {
         m_i2c->begin(); // restart

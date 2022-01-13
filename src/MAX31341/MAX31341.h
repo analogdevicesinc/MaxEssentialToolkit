@@ -41,7 +41,7 @@
 #include <time.h>
 
 
-#define MAX31341_DRV_VERSION        "v1.0.0"
+#define MAX31341_DRV_VERSION        "v1.0.1"
 
 
 class MAX31341

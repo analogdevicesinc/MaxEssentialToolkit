@@ -98,13 +98,11 @@ int MAX31827::read_register(uint8_t reg, uint16_t &val)
     // Read
     int r_Len = m_pec_status ? 3: 2; // +1 for PEC byte
     
-    m_i2c->requestFrom((char)m_slave_addr, (char)r_Len, false);
+    m_i2c->requestFrom((char)m_slave_addr, (char)r_Len, true);
 
     while (m_i2c->available()) { // slave may send less than requested
         buf[counter++] = m_i2c->read(); // receive a byte as character
     }
-    
-    m_i2c->endTransmission();
 
     //
     if (counter == r_Len) {
