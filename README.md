@@ -19,6 +19,9 @@ There are two main options to install library:
  2. Go into Tools -> Manage Libraries...
  3. Search for MaxEssentialToolkit
  4. Click install button
+ 5. On pop-up message box click install all to install dependency too
+
+![Installation](./Images/installation.png)
 
 ### Option 2: 
  1. Dowload repository as .zip file
@@ -27,6 +30,7 @@ There are two main options to install library:
  4. Go into Sketch -> Include Library -> Add .ZIP Library...
  5. Browse the MaxEssentialToolkit.zip location
  6. Click Open
+ 7. [Install OneWire Library](https://www.arduino.cc/reference/en/libraries/onewire/)
 
 ## How to build and load an example
  1. After installation open Arduino IDE
